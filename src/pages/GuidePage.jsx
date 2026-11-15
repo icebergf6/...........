@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { NavLink } from 'react-router-dom';
 import {
   BookOpen,
@@ -79,25 +79,25 @@ const STUDIO_RULES = [
     badgeBg: '#e0f2fe',
     badgeColor: '#0369a1',
     borderColor: '#0284c7',
-    title: 'Disiplin Stopwatch Jam Kerja & Anti-Idle (Attendance Policy)',
+    title: 'Disiplin Timer Jam Kerja (Minimal 3 Jam) & Kebebasan Overwork (Attendance Policy)',
     summary:
-      'Menjamin jam kerja yang terekam di sistem selaras dengan produktivitas nyata di lapangan.',
+      'Menetapkan jam kerja minimum harian 3 jam efektif dengan dukungan penuh lembur (overwork) tanpa batas dan multi-mode timer.',
     points: [
       {
-        subtitle: '2.1 Target Standar Harian (6 Jam & 10 Prospek)',
-        text: 'Setiap hunter memiliki kuota standar 6 jam kerja efektif dan 10 input prospek baru per hari kerja (Senin s/d Jumat), kecuali disesuaikan secara khusus oleh Admin di menu Lifecycle.',
+        subtitle: '2.1 Target Standar Harian (Minimal 3 Jam Kerja Efektif & Kebebasan Overwork)',
+        text: 'Setiap anggota tim memiliki kuota standar minimal 3 jam kerja efektif per hari. Timer mendukung mode Stopwatch bebas, Pomodoro 25/5, Countdown Kustom, dan Hitung Mundur Sisa Target 3 Jam. Setiap anggota tim berhak melakukan overwork (lembur) tanpa batas kuota, dan seluruh jam lembur terekam penuh di statistik profil dan Leaderboard.',
       },
       {
         subtitle: '2.2 Kewajiban Jeda (Pause) Saat Istirahat',
-        text: 'Stopwatch wajib ditekan Jeda (Pause) saat istirahat makan siang, ibadah, atau keperluan pribadi di luar pekerjaan studio.',
+        text: 'Timer wajib ditekan Jeda (Pause) saat istirahat makan, ibadah, atau urusan pribadi di luar pekerjaan studio demi menjaga akurasi dan objektivitas data waktu kerja.',
       },
       {
-        subtitle: '2.3 Korelasi Jam Stopwatch vs Jam Input Prospek',
-        text: 'Sistem Admin secara otomatis memeriksa apakah prospek diinput saat stopwatch sedang menyala (running). Input prospek di luar jam stopwatch akan ditandai peringatan merah pada halaman Audit Admin.',
+        subtitle: '2.3 Korelasi Waktu Kerja & Integritas Data',
+        text: 'Setiap penambahan prospek dan pembaruan log touchpoint disinkronisasikan secara real-time dengan status timer aktif untuk memvalidasi keaslian jam kerja dan produktivitas harian.',
       },
     ],
     sanction:
-      'Sanksi Pelanggaran: Menyalakan stopwatch berjam-jam tanpa ada output prospek baru maupun log touchpoint (idle running) akan dianulir oleh Admin pada saat evaluasi mingguan.',
+      'Sanksi Pelanggaran: Menyalakan timer tanpa aktivitas produktif (idle running) atau memalsukan jam kerja akan berakibat pada pembatalan jam kerja yang bersangkutan pada evaluasi mingguan studio.',
   },
   {
     id: 'rule-3',
@@ -183,83 +183,97 @@ const STUDIO_RULES = [
     sanction:
       'Sanksi Keamanan: Membocorkan kredensial server klien atau mengekspor database prospek untuk kepentingan di luar A-Tier Studio akan berujung pada penonaktifan akun (Suspended) secara permanen.',
   },
+  {
+    id: 'rule-6',
+    code: 'PASAL 06',
+    severity: 'info',
+    severityLabel: 'Tata Kelola Akun',
+    badgeBg: '#eff6ff',
+    badgeColor: '#1d4ed8',
+    borderColor: '#3b82f6',
+    title: 'Tata Kelola Status Akun, Skorsing Berbatas Waktu & Pemulihan Otomatis (Lifecycle)',
+    summary:
+      'Menetapkan siklus hidup akun tim, masa tenggang skorsing sementara berbatas waktu, dan mekanisme pemulihan otomatis (Auto-Reactivation).',
+    points: [
+      {
+        subtitle: '6.1 Status Akun (Aktif, Percobaan, & Nonaktif Sementara)',
+        text: 'Manajemen berhak menetapkan status akun anggota tim: Active (Aktif Penuh), Probation (Masa Percobaan), atau Suspended (Nonaktif Sementara) dengan tanggal tenggat berakhir jika terjadi evaluasi disiplin kerja atau cuti berkala.',
+      },
+      {
+        subtitle: '6.2 Pemulihan Otomatis Tanpa Registrasi Ulang (Auto-Reactivation)',
+        text: 'Akun yang dinonaktifkan sementara dengan tenggat waktu akan secara otomatis dipulihkan (auto-reactivated) oleh sistem tepat saat waktu tenggat habis. Anggota tim dapat langsung login kembali seperti biasa tanpa perlu membuat akun baru.',
+      },
+      {
+        subtitle: '6.3 Sanksi Penonaktifan Permanen & Penghapusan Akun',
+        text: 'Pelanggaran berat terhadap etika studio seperti pencurian database prospek, membocorkan kredensial cPanel klien, atau kecurangan data akan berujung pada penonaktifan permanen atau penghapusan akun secara definitif dari sistem.',
+      },
+    ],
+    sanction:
+      'Jaminan Perlindungan: Hak komisi dari deal sah yang telah selesai tetap diakui dan diselesaikan secara profesional sesuai ketentuan studio.',
+  },
 ];
 
 const DAILY_WORKFLOW_STEPS = [
   {
     id: 'step-1',
-    session: 'SESI 1 • 08:00 – 08:30 WIB',
-    title: 'Check-In Stopwatch & Penyaringan Prioritas Follow-Up',
+    session: 'SESI 1 • 08:30 – 10:00 WIB (90 Menit Pertama)',
+    title: 'Check-In Timer & Riset 5–10 Prospek Baru Terfokus',
     focusTag: 'Riset & Prospecting',
     route: '/attendance',
-    routeLabel: 'Buka Absen & Stopwatch',
+    routeLabel: 'Buka Absen & Timer',
     color: '#2563eb',
     bgLight: '#eff6ff',
     tasks: [
-      'Buka halaman Absen & Stopwatch, pilih tag fokus "Riset & Prospecting", lalu klik tombol Mulai Kerja.',
-      'Buka halaman Prospek Tim, gunakan filter jadwal Follow-Up untuk melihat daftar calon klien yang jatuh tempo hari ini atau terlewat.',
-      'Siapkan daftar 5 prospek prioritas yang sudah pernah dihubungi untuk disapa kembali siang nanti.',
+      'Buka halaman Absen & Stopwatch, pilih mode timer (Stopwatch bebas, Pomodoro, Countdown Kustom, atau Sisa Target 3 Jam) dengan tag "Riset & Prospecting", lalu klik Mulai Kerja.',
+      'Buka halaman Database Prospek Mandiri, periksa daftar prospek dengan jadwal follow-up yang jatuh tempo hari ini.',
+      'Lakukan riset 5–10 bisnis potensial di Google Maps / Instagram yang websitenya lambat atau belum mobile-friendly, lalu input ke tabel prospek pribadi Anda.',
     ],
   },
   {
     id: 'step-2',
-    session: 'SESI 2 • 08:30 – 11:30 WIB',
-    title: 'Riset Terfokus & Input 10 Prospek Baru Berkualitas',
-    focusTag: 'Riset & Prospecting',
+    session: 'SESI 2 • 10:00 – 11:30 WIB (Pencapaian Target 3 Jam)',
+    title: 'Outreach WhatsApp Terarah & Selesaikan Target Minimal 3 Jam',
+    focusTag: 'Outreach WhatsApp',
     route: '/prospects',
     routeLabel: 'Buka Prospek Tim',
     color: '#0284c7',
     bgLight: '#f0f9ff',
     tasks: [
-      'Pilih 1 kategori industri spesifik hari ini (contoh: Klinik Kecantikan, Kontraktor, Restoran, atau Law Firm) di Google Maps / Instagram.',
-      'Periksa kondisi website mereka lewat HP: apakah belum punya web, tampilannya berantakan di layar HP, atau loading sangat lambat.',
-      'Klik tombol "+ Prospek Baru", isi nama bisnis, sumber platform, nomor WhatsApp aktif, dan catatan kelemahan website mereka.',
-      'Pastikan kuota minimal 10 prospek baru tercapai sebelum jam istirahat siang.',
+      'Lanjutkan timer kerja Anda untuk mengakumulasi waktu kerja menuju kuota minimal 3 jam kerja efektif hari ini.',
+      'Buka Drawer Detail prospek baru, klik tombol WhatsApp untuk menyapa pemilik bisnis menggunakan template chat teruji dari Playbook.',
+      'Catat hasil percakapan di kolom Log Touchpoint dan atur preset jadwal follow-up berikutnya (+1 Hari atau +3 Hari).',
+      'Saat akumulasi timer mencapai 3 jam, sistem menampilkan floating banner selamat karena target minimal harian Anda resmi terpenuhi!',
     ],
   },
   {
     id: 'step-3',
     session: 'ISTIRAHAT • 11:30 – 13:00 WIB',
-    title: 'Jeda Stopwatch (Istirahat Makan Siang & Ibadah)',
+    title: 'Jeda Timer (Istirahat Siang & Ibadah)',
     focusTag: 'Jeda Istirahat',
     route: '/attendance',
-    routeLabel: 'Jeda Stopwatch',
+    routeLabel: 'Jeda Timer',
     color: '#d97706',
     bgLight: '#fffbeb',
     tasks: [
-      'Tekan tombol Jeda (Pause) pada halaman Stopwatch atau lewat indikator waktu di bagian atas layar.',
-      'Pastikan status stopwatch berubah menjadi Paused agar pencatatan waktu kerja tetap akurat dan lolos audit Admin.',
+      'Tekan tombol Jeda (Pause) pada halaman Timer atau lewat indikator waktu melayang di bilah atas layar.',
+      'Pastikan status timer berubah menjadi Paused saat beristirahat agar pencatatan waktu kerja tetap akurat dan objektif.',
     ],
   },
   {
     id: 'step-4',
-    session: 'SESI 3 • 13:00 – 15:30 WIB',
-    title: 'Outreach WhatsApp, Kirim Preview, & Catat Log Touchpoint',
-    focusTag: 'Outreach WhatsApp',
-    route: '/prospects',
-    routeLabel: 'Mulai Outreach WA',
-    color: '#7c3aed',
-    bgLight: '#f5f3ff',
-    tasks: [
-      'Lanjutkan stopwatch (Resume) dan ganti tag fokus menjadi "Outreach WhatsApp" atau "Follow-up Klien".',
-      'Klik baris prospek untuk membuka Drawer Detail, lalu klik tombol hijau WhatsApp (otomatis mengarah ke wa.me/62...).',
-      'Gunakan script pesan pembuka dari tab Sales Playbook. Jangan mengirim spam; sebutkan nama bisnis mereka secara spesifik.',
-      'Setiap kali selesai mengirim pesan atau mendapat balasan, wajib ketik ringkasannya di kolom "Log Aktivitas Touchpoint" dan klik tombol preset jadwal follow-up (+1 Hari / +3 Hari).',
-    ],
-  },
-  {
-    id: 'step-5',
-    session: 'SESI 4 • 15:30 – 17:00 WIB',
-    title: 'Closing Deal, Cetak Invoice, & Simpan Auto-Summary Harian',
-    focusTag: 'Closing & Rekap',
+    session: 'SESI 4 • SESI OVERWORK / EKSTRA CLOSING (Sangat Didukung)',
+    title: 'Sesi Overwork Bebas: Follow-Up Intensif, Closing Deal, & Terbitkan Invoice',
+    focusTag: 'Closing & Overwork',
     route: '/deals',
     routeLabel: 'Buka Deal & Keuangan',
     color: '#16a34a',
     bgLight: '#f0fdf4',
     tasks: [
-      'Jika ada klien yang sepakat order, ubah status menjadi "Deal", pilih jenis wewenang ("Full Managed" atau "Beli Putus"), dan isi nilai proyek beserta DP.',
-      'Klik tombol "Buat Invoice" pada halaman Klien Deal untuk mengirimkan tagihan resmi berlogo studio kepada klien.',
-      'Sebelum menutup laptop/HP, buka halaman Absen & Stopwatch, klik tombol "Isi Ringkasan Otomatis" agar sistem menulis laporan harian Anda, lalu simpan catatan.',
+      'Nyalakan kembali timer untuk melakukan overwork (lembur) tanpa batas kuota — seluruh waktu ekstra otomatis tercatat dan melipatgandakan skor Leaderboard.',
+      'Sapa kembali prospek hangat yang merespons penawaran pagi tadi untuk merundingkan paket website.',
+      'Ketika klien sepakat order, buka menu Klien Deal & Keuangan lalu klik "+ Tambah Klien Deal". Gunakan Tab "Ambil Dari Database Prospek" untuk mentransfer data prospek ke deal secara instan dengan satu klik!',
+      'Terbitkan tagihan resmi berlogo studio melalui tombol Invoice dan kirimkan ke klien untuk pembayaran DP 50%.',
+      'Sebelum menutup laptop/HP, klik tombol "Isi Ringkasan Otomatis" di halaman Absensi untuk merangkum seluruh hasil kerja harian dalam 1 detik.',
     ],
   },
 ];
@@ -270,19 +284,20 @@ const FEATURE_MODULES = [
     number: '01',
     role: 'Semua Tim',
     roleBadge: 'pill-linkedin',
-    title: 'Absensi & Stopwatch Kerja Realtime',
+    title: 'Absensi, Multi-Mode Timer Realtime & Overwork',
     path: '/attendance',
     icon: Clock,
     purpose:
-      'Mencatat durasi jam kerja harian secara presisi, memantau pencapaian target prospek harian, dan menyusun laporan aktivitas otomatis.',
+      'Mencatat jam kerja presisi dengan 4 pilihan mode timer, memantau target harian minimal 3 jam, kebebasan lembur (overwork) tanpa batas, dan rekap otomatis.',
     steps: [
-      'Pilih Tag Fokus Kerja (Riset & Prospecting, Outreach WA, Follow-up, Delivery Web, Meeting, atau QC).',
-      'Klik tombol "Mulai Kerja" untuk menjalankan detik stopwatch secara live.',
-      'Pantau 2 kartu progres KPI Harian di sebelah kanan: Persentase Jam Kerja (target 6 jam) dan Persentase Input Prospek (target 10 prospek).',
-      'Di sore hari, klik tombol "Isi Ringkasan Otomatis" — sistem akan langsung menggabungkan total durasi, nama-nama prospek yang Anda input hari ini, jumlah touchpoint, dan jumlah deal ke dalam kolom catatan.',
+      'Pilih 1 dari 4 Mode Timer: (1) Stopwatch Bebas, (2) Pomodoro 25/5 Menit, (3) Countdown Kustom Menit Bebas, atau (4) Hitung Mundur Sisa Target 3 Jam.',
+      'Pilih Tag Fokus Kerja (Riset & Prospecting, Outreach WA, Follow-up, Delivery Web, Meeting, atau QC) lalu klik "Mulai Kerja".',
+      'Pantau progres target harian: kartu KPI otomatis menghitung persentase menuju target minimal 3 jam kerja efektif.',
+      'Bebas melakukan Overwork (lembur): setelah melewati kuota 3 jam, timer terus berjalan menghitung jam lembur Anda untuk meningkatkan skor MVP.',
+      'Klik tombol "Isi Ringkasan Otomatis" di sore hari untuk menghasilkan rangkuman kerja harian lengkap (durasi, prospek, touchpoint, deal) dalam 1 detik.',
     ],
     proTip:
-      'Indikator stopwatch juga tampil secara ringkas di bilah atas (navbar) sehingga Anda tetap bisa memantau waktu sambil membuka halaman Prospek.',
+      'Indikator timer berjalan aktif juga tampil di navbar bagian atas sehingga Anda dapat memantau waktu kerja saat berpindah ke halaman lain.',
   },
   {
     id: 'mod-2',
@@ -293,35 +308,37 @@ const FEATURE_MODULES = [
     path: '/prospects',
     icon: Users,
     purpose:
-      'Mengelola daftar calon klien pribadi secara mandiri (User A tidak bisa melihat prospek User B) dari berbagai platform lengkap dengan pengingat jadwal follow-up dan deteksi duplikat otomatis.',
+      'Mengelola prospek kerja mandiri terisolasi per individu (data User A aman dari User B) dengan deteksi duplikat aman dan proteksi kepemilikan 14 hari.',
     steps: [
       'Klik "+ Tambah Prospek" di pojok kanan atas untuk menambahkan calon klien baru ke tabel kerja mandiri Anda.',
-      'Ketik nomor WhatsApp atau nama bisnis — sistem dilengkapi "Privacy-Safe Duplicate Detector" yang otomatis memperingatkan jika klien tersebut sudah sedang digarap oleh hunter lain tanpa membocorkan detail catatan mereka.',
+      'Ketik nomor WhatsApp atau nama bisnis — sistem dilengkapi "Privacy-Safe Duplicate Detector" yang otomatis memperingatkan jika klien tersebut sudah terdaftar sebelumnya.',
       'Klik salah satu baris prospek pada tabel untuk membuka "Drawer Detail Prospek" di sisi kanan layar.',
       'Di dalam Drawer, gunakan tombol preset jadwal Follow-Up ("Hari Ini", "Besok", "+3 Hari", "+1 Minggu") dan catat setiap riwayat chat di bagian "Log Aktivitas Touchpoint".',
-      'Gunakan tombol "Export CSV" untuk mengunduh laporan prospek pribadi Anda (atau seluruh tim khusus bagi Admin).',
+      'Gunakan tombol "Export CSV / Excel" untuk mengunduh laporan prospek pribadi Anda yang rapi sewaktu-waktu.',
     ],
     proTip:
-      'Meskipun tabel prospek bersifat mandiri per individu, setiap prospek baru dan log touchpoint yang Anda catat tetap terhitung secara otomatis dan real-time ke halaman Leaderboard Kompetisi Tim serta panel Audit Admin!',
+      'Seluruh prospek dan aktivitas touchpoint yang Anda kelola otomatis menyumbang poin ke Leaderboard kompetisi tim secara real-time dan transparan.',
   },
   {
     id: 'mod-3',
     number: '03',
     role: 'Hunter & Finance',
     roleBadge: 'status-deal',
-    title: 'Klien Deal, Pembagian Komisi, & Generator Invoice',
+    title: 'Klien Deal, Modal Dual-Tab Prospek, & Invoice Generator',
     path: '/deals',
     icon: Wallet,
     purpose:
-      'Mengelola klien yang sudah closing (Deal), memantau pembayaran DP/Pelunasan, memisahkan tipe manajemen website, dan menerbitkan invoice resmi.',
+      'Mengelola klien closing, memindahkan data prospek ke deal secara instan dengan modal 2-tab, bagi hasil komisi otomatis, dan penerbitan invoice resmi.',
     steps: [
-      'Saat prospek berstatus "Deal", pilih Tipe Manajemen Klien: "Full Managed (Hosting & Domain Kami)" atau "Beli Putus (Hanya Jasa Web / Lepas)".',
-      'Masukkan Nilai Proyek (IDR atau USD) serta nominal DP yang diterima, lalu sesuaikan status pembayaran ("Belum DP", "DP Masuk", atau "Lunas").',
-      'Sistem secara otomatis menghitung Komisi Hunter (15% dari uang masuk) dan Alokasi Kas Studio (25% dari uang masuk).',
-      'Klik tombol "Invoice" pada kartu klien untuk membuka pratinjau tagihan resmi yang dilengkapi pilihan metode rekening pembayaran studio dan siap dicetak ke PDF.',
+      'Klik tombol "+ Tambah Klien Deal" di halaman Klien Deal & Keuangan — modal pop-up dilengkapi 2 Tab di bagian atas:',
+      '• Tab 1 (Input Manual): Mengisi data proyek secara langsung untuk klien baru atau repeat order.',
+      '• Tab 2 (Ambil Dari Database Prospek): Menampilkan daftar prospek Anda secara lengkap. Cukup klik tombol satu-klik "Pilih Prospek Ini", seluruh data (Nama, WhatsApp, Industri, Nilai Estimasi, dan Catatan) langsung terisi otomatis!',
+      'Pilih Tipe Manajemen Klien: "Full Managed (Hosting & Domain Kami)" atau "Beli Putus (Hanya Jasa Web / Lepas)".',
+      'Sistem secara otomatis menghitung hak Komisi Hunter (15% dari uang masuk kas) dan Alokasi Kas Studio (25%).',
+      'Klik tombol "Invoice" pada baris klien untuk mencetak tagihan resmi berlogo studio ke format PDF siap kirim ke WhatsApp klien.',
     ],
     proTip:
-      'Jika Anda mengubah status pembayaran menjadi "Lunas", sistem otomatis menyamakan nominal DP/Uang Masuk dengan nilai penuh proyek.',
+      'Memindahkan data dari Tab Prospek ke Deal menghemat waktu penginputan hingga 90% dan sepenuhnya mengeliminasi risiko salah ketik nomor WhatsApp klien.',
   },
   {
     id: 'mod-4',
@@ -378,7 +395,7 @@ const FEATURE_MODULES = [
       'Gunakan fitur "Head-to-Head Comparison" di bagian tengah untuk membandingkan statistik dua anggota tim secara berdampingan pada 9 indikator sekaligus.',
     ],
     proTip:
-      'Prospek yang ditolak oleh Admin karena terindikasi fiktif/duplikat pada saat audit otomatis dikeluarkan dari perhitungan skor Leaderboard.',
+      'Seluruh metrik performa dihitung otomatis secara objektif dari data riil absensi, prospek, dan transaksi yang berhasil diverifikasi studio.',
   },
   {
     id: 'mod-7',
@@ -514,6 +531,40 @@ Pembayaran dapat ditransfer melalui rekening resmi kami yang tertera pada invoic
 
 Terima kasih banyak Kak, selamat berpartner! 🙏🚀`,
   },
+  {
+    id: 'script-7',
+    category: 'Retensi & Hosting',
+    badgeClass: 'pill-website',
+    title: '7. Script Penawaran Perpanjangan Managed Hosting & Domain Tahunan',
+    whenToUse:
+      'Gunakan 30 hari hingga 7 hari sebelum masa aktif domain dan server hosting klien berakhir.',
+    text: `Halo selamat pagi/siang Kak [Nama Klien], semoga bisnis [Nama Brand] semakin sukses dan lancar berkah ya Kak! 🙏✨
+
+Izin menginformasikan bahwa masa aktif layanan Cloud Server Hosting & Domain resmi [domainklien.com] akan memasuki periode perpanjangan tahunan pada tanggal [Tanggal Jatuh Tempo].
+
+Agar website tetap aktif 24/7 tanpa gangguan akses bagi para pelanggan Kakak, berikut rincian biaya perpanjangan tahunan (mencakup sewa server cloud cepat, perpanjangan nama domain, sertifikat keamanan SSL, dan pemeliharaan teknis rutin):
+📌 Total Investasi Tahunan: [Nominal Tagihan]
+
+Pembayaran dapat ditransfer ke rekening resmi studio kami:
+🏦 [Nama Bank]: [Nomor Rekening] a.n [Nama Pemilik]
+
+Mohon konfirmasinya jika dana sudah dialokasikan ya Kak. Terima kasih banyak atas kepercayaan berkelanjutan Kakak bersama A-Tier Studio! 🚀`,
+  },
+  {
+    id: 'script-8',
+    category: 'Follow Up Hangat',
+    badgeClass: 'status-followup',
+    title: '8. Script Re-Engage Prospek Lama yang Sempat Tertunda (Follow-Up Hangat)',
+    whenToUse:
+      'Gunakan untuk menyapa kembali prospek yang 1–2 bulan lalu sempat tertarik namun menunda eksekusi karena kesibukan.',
+    text: `Halo selamat siang Kak [Nama Klien], apa kabar bisnis [Nama Brand]? Semoga orderan dan pelanggan makin ramai ya Kak 🙏😊
+
+Saya izin menyapa kembali sekalian mengabarkan bahwa tim A-Tier Studio baru saja merilis beberapa portofolio website terbaru untuk industri [Nama Industri/Bisnis Klien] dengan fitur direct WhatsApp ordering yang terbukti meningkatkan konversi penjualan.
+
+Mengingat beberapa waktu lalu Kakak sempat berencana memperbarui website [Nama Brand], apakah bulan ini momentum yang tepat untuk kita wujudkan? 
+
+Kebetulan kami sedang membuka slot desain minggu ini dengan bonus gratis konsultasi copywriting. Jika Kakak berkenan, saya bisa kirimkan mockup konsep terbarunya siang ini. Bagaimana menurut Kakak? ✨`,
+  },
 ];
 
 const FAQ_ITEMS = [
@@ -553,25 +604,55 @@ const FAQ_ITEMS = [
     q: 'Siapa saja yang dapat melihat kolom Kredensial Hosting / Password CMS pada detail proyek?',
     a: 'Kolom kredensial dilindungi oleh kebijakan keamanan berlapis (Zero In-Memory Leak). Hanya 3 pihak yang dapat melihat dan mengubah isinya: (1) Administrator Studio, (2) Sales Hunter pembuat prospek tersebut, dan (3) PIC Project yang ditugaskan menangani pembuatan webnya. Anggota tim lain hanya akan melihat teks tersensor (••••••••).',
   },
+  {
+    id: 'faq-7',
+    category: 'Klien Deal & Keuangan',
+    q: 'Bagaimana cara memindahkan prospek menjadi Klien Deal secara instan tanpa ketik ulang?',
+    a: 'Buka menu Klien Deal & Keuangan (/deals), lalu klik tombol "+ Tambah Klien Deal". Pada jendela pop-up modal, klik tab kedua "Ambil Dari Database Prospek". Anda akan melihat tabel seluruh prospek Anda lengkap dengan status dan kontaknya. Cukup klik tombol biru "Pilih Prospek Ini" pada baris prospek yang diinginkan, maka seluruh informasi (Nama Klien, Nomor WhatsApp, Nama Bisnis, Estimasi Nilai, dan Catatan) akan otomatis tersalin ke form deal dalam satu detik!',
+  },
+  {
+    id: 'faq-8',
+    category: 'Absensi & Stopwatch',
+    q: 'Berapa target jam kerja harian minimal dan apakah saya boleh lembur (overwork)?',
+    a: 'Target standar harian studio adalah MINIMAL 3 JAM kerja efektif per hari. Setiap anggota tim diberikan kebebasan penuh untuk melakukan overwork (lembur) tanpa batasan kuota. Seluruh waktu kerja ekstra yang Anda luangkan akan terekam otomatis di statistik profil serta menambah skor peringkat Anda di Leaderboard Kompetisi Tim.',
+  },
+  {
+    id: 'faq-9',
+    category: 'Absensi & Stopwatch',
+    q: 'Apa saja 4 pilihan Mode Timer yang tersedia di halaman Absensi?',
+    a: 'Sistem menyediakan 4 mode timer fleksibel: (1) Stopwatch Bebas (hitung maju standar), (2) Pomodoro Mode (siklus 25 menit fokus kerja dan 5 menit istirahat dengan bunyi bel otomatis), (3) Countdown Kustom (atur hitung mundur sesuai menit target Anda sendiri), dan (4) Hitung Mundur Sisa Target (menghitung mundur sisa jam yang dibutuhkan untuk menuntaskan kuota minimal 3 jam hari ini).',
+  },
+  {
+    id: 'faq-10',
+    category: 'Autentikasi & Akun',
+    q: 'Apa yang terjadi jika akun dinonaktifkan sementara dan bagaimana pemulihannya?',
+    a: 'Jika sebuah akun dinonaktifkan sementara (Suspended with Expiry Date) oleh manajemen karena masa evaluasi atau cuti berkala, sistem secara otomatis mencatat tanggal tenggat waktu berakhirnya dalam format UTC. Tepat saat masa tenggat habis, sistem akan secara otomatis memulihkan (auto-reactivate) akses akun tersebut. User dapat langsung login kembali seperti biasa tanpa harus mendaftar ulang atau menghubungi admin.',
+  },
 ];
 
 export default function GuidePage() {
   const { profile } = useAuth();
   const isAdmin = profile?.role === 'admin';
 
-  // Navigasi 7 Sub-Halaman Utama
+  // Navigasi Sub-Halaman Utama
   const [activeSubPage, setActiveSubPage] = useState('rules');
   const [searchQuery, setSearchQuery] = useState('');
   const [roleFilter, setRoleFilter] = useState('ALL'); // 'ALL' | 'Hunter' | 'Delivery' | 'Admin'
   const [copiedId, setCopiedId] = useState('');
 
-  // State Simulasi Checklist Alur Kerja Harian (Interaktif)
+  // Sembunyikan dan amankan SOP & Audit Admin dari user biasa
+  useEffect(() => {
+    if (!isAdmin && activeSubPage === 'admin_sop') {
+      setActiveSubPage('rules');
+    }
+  }, [isAdmin, activeSubPage]);
+
+  // State Simulasi Checklist Alur Kerja Harian (Interaktif 4 Sesi)
   const [completedSteps, setCompletedSteps] = useState({
     'step-1': true,
     'step-2': false,
     'step-3': false,
     'step-4': false,
-    'step-5': false,
   });
 
   // State Kalkulator Simulasi Komisi & Bagi Hasil Studio (Interaktif)
@@ -657,26 +738,32 @@ export default function GuidePage() {
     };
   }, [simHostingClients, simHostingPrice, simHostingCost]);
 
-  // Filter Modul berdasarkan Role
+  // Saring Modul: Modul khusus Admin hanya tersedia jika role === 'admin'
+  const availableModules = useMemo(() => {
+    if (isAdmin) return FEATURE_MODULES;
+    return FEATURE_MODULES.filter((m) => m.role !== 'Khusus Admin');
+  }, [isAdmin]);
+
+  // Filter Modul berdasarkan Role dan ketersediaan hak akses
   const filteredModules = useMemo(() => {
-    if (roleFilter === 'ALL') return FEATURE_MODULES;
+    if (roleFilter === 'ALL') return availableModules;
     if (roleFilter === 'Hunter') {
-      return FEATURE_MODULES.filter((m) =>
+      return availableModules.filter((m) =>
         ['Semua Tim', 'Sales Hunter', 'Hunter & Finance', 'Hunter & Admin'].includes(m.role)
       );
     }
     if (roleFilter === 'Delivery') {
-      return FEATURE_MODULES.filter((m) =>
+      return availableModules.filter((m) =>
         ['Semua Tim', 'Tim Delivery / PIC', 'Hunter & Finance'].includes(m.role)
       );
     }
-    if (roleFilter === 'Admin') {
-      return FEATURE_MODULES.filter((m) =>
+    if (roleFilter === 'Admin' && isAdmin) {
+      return availableModules.filter((m) =>
         ['Semua Tim', 'Khusus Admin', 'Hunter & Admin'].includes(m.role)
       );
     }
-    return FEATURE_MODULES;
-  }, [roleFilter]);
+    return availableModules;
+  }, [roleFilter, availableModules, isAdmin]);
 
   // Pencarian Global Lintas Sub-Halaman
   const globalSearchResults = useMemo(() => {
@@ -690,7 +777,7 @@ export default function GuidePage() {
         r.points.some((p) => p.subtitle.toLowerCase().includes(q) || p.text.toLowerCase().includes(q))
     );
 
-    const matchedModules = FEATURE_MODULES.filter(
+    const matchedModules = availableModules.filter(
       (m) =>
         m.title.toLowerCase().includes(q) ||
         m.purpose.toLowerCase().includes(q) ||
@@ -718,7 +805,7 @@ export default function GuidePage() {
       matchedScripts,
       matchedFaqs,
     };
-  }, [searchQuery]);
+  }, [searchQuery, availableModules]);
 
   const completedStepsCount = Object.values(completedSteps).filter(Boolean).length;
   const workflowProgressPct = Math.round((completedStepsCount / DAILY_WORKFLOW_STEPS.length) * 100);
@@ -734,15 +821,15 @@ export default function GuidePage() {
     {
       id: 'workflow',
       step: '2',
-      label: 'SOP Alur Kerja 6 Jam',
+      label: 'SOP Alur Kerja 3 Jam',
       count: DAILY_WORKFLOW_STEPS.length,
       icon: Zap,
     },
     {
       id: 'features',
       step: '3',
-      label: 'Panduan 8 Modul CRM',
-      count: FEATURE_MODULES.length,
+      label: isAdmin ? 'Panduan 8 Modul CRM' : 'Panduan 7 Modul CRM',
+      count: availableModules.length,
       icon: Compass,
     },
     {
@@ -759,16 +846,20 @@ export default function GuidePage() {
       count: PLAYBOOK_SCRIPTS.length,
       icon: MessageSquare,
     },
-    {
-      id: 'admin_sop',
-      step: '6',
-      label: 'SOP & Audit Admin',
-      count: 4,
-      icon: ShieldCheck,
-    },
+    ...(isAdmin
+      ? [
+          {
+            id: 'admin_sop',
+            step: '6',
+            label: 'SOP & Audit Admin',
+            count: 4,
+            icon: ShieldCheck,
+          },
+        ]
+      : []),
     {
       id: 'faq',
-      step: '7',
+      step: isAdmin ? '7' : '6',
       label: 'FAQ & Solusi Teknis',
       count: FAQ_ITEMS.length,
       icon: Lightbulb,
@@ -845,13 +936,13 @@ export default function GuidePage() {
               <span>Target Harian Hunter</span>
             </div>
             <div className="notion-stat-value">
-              6 Jam{' '}
+              Min 3 Jam{' '}
               <span className="text-muted fw-normal" style={{ fontSize: '13.5px' }}>
-                &amp; 10 Prospek
+                + Overwork Bebas
               </span>
             </div>
             <div className="text-muted mt-1" style={{ fontSize: '11.5px' }}>
-              Terekam live di Stopwatch &amp; Leaderboard
+              4 mode timer &amp; tercatat otomatis di Leaderboard
             </div>
           </div>
         </div>
@@ -995,7 +1086,7 @@ export default function GuidePage() {
             <div className="text-center py-5 text-muted">
               <div className="fw-semibold mb-1">Tidak ditemukan topik yang cocok</div>
               <div style={{ fontSize: '12.5px' }}>
-                Coba gunakan kata kunci lain seperti: <code>komisi</code>, <code>dp</code>, <code>revisi</code>, <code>hosting</code>, <code>wa</code>, atau <code>audit</code>.
+                Coba gunakan kata kunci lain seperti: <code>komisi</code>, <code>dp</code>, <code>revisi</code>, <code>hosting</code>, <code>wa</code>, atau <code>prospek</code>.
               </div>
             </div>
           ) : (
@@ -1135,7 +1226,7 @@ export default function GuidePage() {
                 </div>
               </div>
               <span className="notion-pill status-batal">
-                5 Pasal Utama
+                6 Pasal Utama
               </span>
             </div>
           </div>
@@ -1215,7 +1306,7 @@ export default function GuidePage() {
       )}
 
       {/* ===================================================================== */}
-      {/* SUB-HALAMAN 2: SOP ALUR KERJA HARIAN 6 JAM (INTERACTIVE CHECKLIST)    */}
+      {/* SUB-HALAMAN 2: SOP ALUR KERJA HARIAN 3 JAM (INTERACTIVE CHECKLIST)    */}
       {/* ===================================================================== */}
       {!globalSearchResults && activeSubPage === 'workflow' && (
         <div className="d-flex flex-column gap-3">
@@ -1225,10 +1316,10 @@ export default function GuidePage() {
               <div>
                 <h2 className="h6 fw-bold mb-1 d-flex align-items-center gap-2">
                   <Zap size={18} className="text-primary" />
-                  <span>SOP Alur Kerja Efisien 6 Jam (Rutinitas Harian Sales Hunter)</span>
+                  <span>SOP Alur Kerja Efisien 3 Jam (Rutinitas Target Harian &amp; Sesi Overwork)</span>
                 </h2>
                 <div className="text-muted" style={{ fontSize: '12.5px' }}>
-                  Centang simulasi langkah di bawah untuk mengikuti urutan kerja paling produktif dari jam 08:00 pagi hingga 17:00 sore.
+                  Centang simulasi langkah di bawah untuk mengikuti alur kerja produktif mencapai target minimal 3 jam dan sesi overwork lembur.
                 </div>
               </div>
 
@@ -1246,7 +1337,6 @@ export default function GuidePage() {
                       'step-2': false,
                       'step-3': false,
                       'step-4': false,
-                      'step-5': false,
                     })
                   }
                 >
@@ -1375,7 +1465,7 @@ export default function GuidePage() {
           {/* Role Filter Bar */}
           <div className="notion-card d-flex flex-wrap align-items-center justify-content-between gap-2">
             <div>
-              <h2 className="h6 fw-bold mb-0">Panduan Penggunaan 8 Modul Utama A-Tier CRM</h2>
+              <h2 className="h6 fw-bold mb-0">Panduan Penggunaan {availableModules.length} Modul Utama A-Tier CRM</h2>
               <div className="text-muted" style={{ fontSize: '12.5px' }}>
                 Saring modul sesuai peran Anda untuk mempelajari langkah penggunaan setiap halaman secara detail.
               </div>
@@ -1383,10 +1473,10 @@ export default function GuidePage() {
 
             <div className="d-flex flex-wrap gap-2">
               {[
-                { id: 'ALL', label: 'Semua Modul (8)' },
+                { id: 'ALL', label: `Semua Modul (${availableModules.length})` },
                 { id: 'Hunter', label: 'Sales Hunter' },
                 { id: 'Delivery', label: 'Delivery / PIC Web' },
-                { id: 'Admin', label: 'Administrator' },
+                ...(isAdmin ? [{ id: 'Admin', label: 'Administrator' }] : []),
               ].map((rf) => (
                 <button
                   key={rf.id}
@@ -1751,7 +1841,7 @@ export default function GuidePage() {
           <div className="notion-card">
             <h2 className="h6 fw-bold mb-1 d-flex align-items-center gap-2">
               <MessageSquare size={18} className="text-primary" />
-              <span>Sales Playbook: 6 Template Chat WhatsApp &amp; Penanganan Keberatan Klien</span>
+              <span>Sales Playbook: {PLAYBOOK_SCRIPTS.length} Template Chat WhatsApp &amp; Penanganan Keberatan Klien</span>
             </h2>
             <div className="text-muted" style={{ fontSize: '12.5px' }}>
               Klik tombol <strong>Copy Script</strong> di pojok kanan kartu, lalu ganti teks di dalam tanda kurung siku <code>[...]</code> sesuai nama bisnis klien Anda.
@@ -1815,9 +1905,9 @@ export default function GuidePage() {
       )}
 
       {/* ===================================================================== */}
-      {/* SUB-HALAMAN 6: SOP & HAK AKSES KHUSUS ADMINISTRATOR                   */}
+      {/* SUB-HALAMAN 6: SOP & HAK AKSES KHUSUS ADMINISTRATOR (HANYA UNTUK ADMIN)*/}
       {/* ===================================================================== */}
-      {!globalSearchResults && activeSubPage === 'admin_sop' && (
+      {!globalSearchResults && isAdmin && activeSubPage === 'admin_sop' && (
         <div className="d-flex flex-column gap-3">
           <div className="notion-card d-flex flex-wrap align-items-center justify-content-between gap-2">
             <div>
