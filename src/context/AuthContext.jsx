@@ -13,7 +13,42 @@ const AuthContext = createContext(null);
 const LOCAL_SESSION_KEY = 'atier_crm_session_v2';
 const LOCAL_USERS_KEY = 'atier_crm_users_v2';
 
-const DEFAULT_DEMO_USERS = [];
+const DEFAULT_DEMO_USERS = [
+  {
+    email: 'admin@atier-studio.com',
+    password: 'leo1234bulee1234',
+    user: { id: 'admin-demo-leo', email: 'admin@atier-studio.com' },
+    profile: {
+      id: 'admin-demo-leo',
+      username: 'leo_syafiq',
+      email: 'admin@atier-studio.com',
+      role: 'admin',
+      status: 'active',
+      tier: 'Core Partner',
+      targetDailyHours: 3,
+      targetDailyProspects: 10,
+      customCommissionRate: 0.15,
+      evaluationNotes: 'Owner & Chief Operations Partner',
+    },
+  },
+  {
+    email: 'rina@atier-studio.com',
+    password: 'user1234bulee1234',
+    user: { id: 'user-demo-rina', email: 'rina@atier-studio.com' },
+    profile: {
+      id: 'user-demo-rina',
+      username: 'rina_hunter',
+      email: 'rina@atier-studio.com',
+      role: 'user',
+      status: 'active',
+      tier: 'Junior Hunter',
+      targetDailyHours: 3,
+      targetDailyProspects: 10,
+      customCommissionRate: 0.15,
+      evaluationNotes: 'Hunting prospek harian konsisten',
+    },
+  },
+];
 
 export function normalizeProfile(raw, fallbackAuthUser = null) {
   if (!raw && !fallbackAuthUser) return null;
@@ -96,7 +131,7 @@ function getInitialLocalUsers() {
     const raw = localStorage.getItem(LOCAL_USERS_KEY);
     if (raw) {
       const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed)) {
+      if (Array.isArray(parsed) && parsed.length > 0) {
         return parsed.map((u) => ({
           ...u,
           profile: normalizeProfile(u.profile, u.user),
