@@ -20,6 +20,9 @@ const LOCAL_ATTENDANCE_KEY = 'atier_crm_attendance_logs_v1';
 const TIMER_MODE_KEY = 'atier_crm_timer_mode_v1';
 const CHIME_PREF_KEY = 'atier_crm_chime_enabled_v1';
 const POMODORO_CYCLES_KEY_PREFIX = 'atier_crm_pomo_cycles_';
+const COUNTDOWN_END_TIME_KEY = 'atier_crm_countdown_end_time';
+const POMODORO_STAGE_KEY = 'atier_crm_pomodoro_stage';
+const COUNTDOWN_DUR_KEY = 'atier_crm_countdown_dur';
 
 export function calculateLiveSeconds(logRecord, nowMs = Date.now()) {
   if (!logRecord) return 0;
@@ -51,10 +54,44 @@ export function AttendanceProvider({ children }) {
     }
   });
 
-  const [countdownDuration, setCountdownDuration] = useState(1500); // 25 min default
-  const [countdownRemaining, setCountdownRemaining] = useState(1500);
-  const [isCountdownRunning, setIsCountdownRunning] = useState(false);
-  const [pomodoroStage, setPomodoroStage] = useState('work'); // 'work' | 'break'
+  const [pomodoroStage, setPomodoroStage] = useState(() => {
+    try {
+      return localStorage.getItem(POMODORO_STAGE_KEY) || 'work';
+    } catch {
+      return 'work';
+    }
+  });
+
+  const [countdownDuration, setCountdownDuration] = useState(() => {
+    try {
+      const saved = localStorage.getItem(COUNTDOWN_DUR_KEY);
+      return saved ? Number(saved) || 1500 : 1500;
+    } catch {
+      return 1500;
+    }
+  });
+
+  const [countdownRemaining, setCountdownRemaining] = useState(() => {
+    try {
+      const endMs = Number(localStorage.getItem(COUNTDOWN_END_TIME_KEY));
+      if (endMs && endMs > Date.now()) {
+        return Math.max(0, Math.floor((endMs - Date.now()) / 1000));
+      }
+      return 1500;
+    } catch {
+      return 1500;
+    }
+  });
+
+  const [isCountdownRunning, setIsCountdownRunning] = useState(() => {
+    try {
+      const endMs = Number(localStorage.getItem(COUNTDOWN_END_TIME_KEY));
+      return Boolean(endMs && endMs > Date.now());
+    } catch {
+      return false;
+    }
+  });
+
   const [pomodoroCycles, setPomodoroCycles] = useState(() => {
     try {
       const saved = localStorage.getItem(POMODORO_CYCLES_KEY_PREFIX + todayDate);
@@ -72,6 +109,7 @@ export function AttendanceProvider({ children }) {
     }
   });
 
+  const pauseWorkRef = useRef(null);
   const isCountdownRunningRef = useRef(false);
   isCountdownRunningRef.current = isCountdownRunning;
   const pomodoroStageRef = useRef('work');
@@ -146,6 +184,9 @@ export function AttendanceProvider({ children }) {
   function handleCountdownFinished() {
     setIsCountdownRunning(false);
     isCountdownRunningRef.current = false;
+    try {
+      localStorage.removeItem(COUNTDOWN_END_TIME_KEY);
+    } catch {}
 
     if (chimeEnabledRef.current) {
       const chimeType =
@@ -157,10 +198,18 @@ export function AttendanceProvider({ children }) {
 
     if (timerModeRef.current === 'pomodoro') {
       if (pomodoroStageRef.current === 'work') {
+        // Otomatis jeda stopwatch saat memasuki waktu istirahat agar data audit akurat
+        if (pauseWorkRef.current) {
+          pauseWorkRef.current().catch(() => {});
+        }
         showDesktopNotification('🍅 Sesi Pomodoro 25 Menit Selesai!', {
-          body: 'Kerja bagus! Waktunya istirahat sejenak 5 menit untuk rileks.',
+          body: 'Kerja bagus! Stopwatch dijeda otomatis. Waktunya istirahat sejenak 5 menit untuk rileks.',
         });
         setPomodoroStage('break');
+        try {
+          localStorage.setItem(POMODORO_STAGE_KEY, 'break');
+          localStorage.setItem(COUNTDOWN_DUR_KEY, '300');
+        } catch {}
         setCountdownDuration(300);
         setCountdownRemaining(300);
         setPomodoroCycles((prev) => {
@@ -178,6 +227,10 @@ export function AttendanceProvider({ children }) {
           body: 'Siap untuk sesi Pomodoro fokus berikutnya? Klik Mulai Kerja.',
         });
         setPomodoroStage('work');
+        try {
+          localStorage.setItem(POMODORO_STAGE_KEY, 'work');
+          localStorage.setItem(COUNTDOWN_DUR_KEY, '1500');
+        } catch {}
         setCountdownDuration(1500);
         setCountdownRemaining(1500);
       }
@@ -304,6 +357,7 @@ export function AttendanceProvider({ children }) {
   }
 
   async function pauseWork() {
+    pauseWorkRef.current = pauseWork;
     if (!myTodayLog || myTodayLog.status !== 'running') return;
     const nowIso = new Date().toISOString();
     const totalSec = calculateLiveSeconds(myTodayLog, Date.now());
@@ -439,6 +493,7 @@ export function AttendanceProvider({ children }) {
     setTimerModeState(mode);
     try {
       localStorage.setItem(TIMER_MODE_KEY, mode);
+      localStorage.removeItem(COUNTDOWN_END_TIME_KEY);
     } catch {}
 
     if (mode === 'pomodoro') {
@@ -446,17 +501,30 @@ export function AttendanceProvider({ children }) {
       setCountdownDuration(1500);
       setCountdownRemaining(1500);
       setIsCountdownRunning(false);
+      try {
+        localStorage.setItem(POMODORO_STAGE_KEY, 'work');
+        localStorage.setItem(COUNTDOWN_DUR_KEY, '1500');
+      } catch {}
     } else if (mode === 'countdown') {
       setIsCountdownRunning(false);
     }
   }
 
   async function startCountdown(durationSec) {
+    let dur = countdownDuration;
     if (durationSec && Number(durationSec) > 0) {
-      const dur = Number(durationSec);
+      dur = Number(durationSec);
       setCountdownDuration(dur);
       setCountdownRemaining(dur);
     }
+    const currentRem = durationSec ? dur : (countdownRemaining > 0 ? countdownRemaining : dur);
+    const endMs = Date.now() + currentRem * 1000;
+    try {
+      localStorage.setItem(COUNTDOWN_END_TIME_KEY, String(endMs));
+      localStorage.setItem(COUNTDOWN_DUR_KEY, String(dur));
+      localStorage.setItem(POMODORO_STAGE_KEY, pomodoroStage);
+    } catch {}
+
     setIsCountdownRunning(true);
     // Otomatis sinkronkan dengan stopwatch jam kerja harian
     if (!myTodayLog || myTodayLog.status !== 'running') {
@@ -470,12 +538,20 @@ export function AttendanceProvider({ children }) {
 
   async function pauseCountdown() {
     setIsCountdownRunning(false);
+    try {
+      localStorage.removeItem(COUNTDOWN_END_TIME_KEY);
+    } catch {}
     if (myTodayLog?.status === 'running') {
       await pauseWork();
     }
   }
 
   async function resumeCountdown() {
+    const endMs = Date.now() + (countdownRemaining > 0 ? countdownRemaining * 1000 : countdownDuration * 1000);
+    try {
+      localStorage.setItem(COUNTDOWN_END_TIME_KEY, String(endMs));
+    } catch {}
+
     setIsCountdownRunning(true);
     if (!myTodayLog || myTodayLog.status !== 'running') {
       if (myTodayLog) {
@@ -488,18 +564,30 @@ export function AttendanceProvider({ children }) {
 
   function resetCountdown(newDurationSec) {
     setIsCountdownRunning(false);
+    try {
+      localStorage.removeItem(COUNTDOWN_END_TIME_KEY);
+    } catch {}
     const dur = newDurationSec || countdownDuration;
     setCountdownDuration(dur);
     setCountdownRemaining(dur);
   }
 
   function skipPomodoroStage() {
+    try {
+      localStorage.removeItem(COUNTDOWN_END_TIME_KEY);
+    } catch {}
     if (pomodoroStage === 'work') {
       setPomodoroStage('break');
+      try {
+        localStorage.setItem(POMODORO_STAGE_KEY, 'break');
+      } catch {}
       setCountdownDuration(300);
       setCountdownRemaining(300);
     } else {
       setPomodoroStage('work');
+      try {
+        localStorage.setItem(POMODORO_STAGE_KEY, 'work');
+      } catch {}
       setCountdownDuration(1500);
       setCountdownRemaining(1500);
     }

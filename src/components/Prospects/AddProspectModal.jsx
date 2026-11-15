@@ -185,6 +185,9 @@ export default function AddProspectModal({
       }
       setSelectedSourceProspect(null);
       onClose();
+    } catch (err) {
+      console.error('Gagal menyimpan data:', err);
+      alert('Gagal menyimpan data ke sistem: ' + (err?.message || 'Silakan periksa koneksi internet Anda.'));
     } finally {
       setSubmitting(false);
     }

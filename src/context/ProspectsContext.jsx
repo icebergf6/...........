@@ -137,7 +137,32 @@ export function ProspectsProvider({ children }) {
           .order('created_at', { ascending: false });
 
         if (error) throw error;
-        setAllProspects(data || []);
+
+        // Zero In-Memory Leak: Sanitasi kredensial cPanel/CMS agar tidak pernah ada di memory user tidak berwenang
+        const currentUname = (profile?.username || '').trim().toLowerCase();
+        const isAdminUser = profile?.role === 'admin';
+
+        const sanitized = (data || []).map((item) => {
+          const isOwner =
+            (user?.id && item.user_id === user.id) ||
+            (currentUname && (item.created_by_username || '').trim().toLowerCase() === currentUname);
+          const isAssignee =
+            currentUname && (item.project_assignee || '').trim().toLowerCase() === currentUname;
+          const canAccessCreds = isAdminUser || isOwner || isAssignee;
+
+          if (!canAccessCreds && item.delivery_assets?.credentials) {
+            return {
+              ...item,
+              delivery_assets: {
+                ...item.delivery_assets,
+                credentials: '',
+              },
+            };
+          }
+          return item;
+        });
+
+        setAllProspects(sanitized);
       } else {
         const saved = localStorage.getItem(LOCAL_PROSPECTS_KEY);
         if (saved) {
@@ -324,8 +349,13 @@ export function ProspectsProvider({ children }) {
       merged.renewal_enabled = true;
     }
 
+    const canAccessCreds = isAdmin || isOwner || isAssignee;
     if (merged.delivery_assets) {
       merged.delivery_assets = normalizeDeliveryAssets(merged.delivery_assets);
+      // Cegah ketidaksengajaan terhapusnya kredensial jika user tidak berwenang mengedit kredensial
+      if (!canAccessCreds && existing.delivery_assets?.credentials) {
+        merged.delivery_assets.credentials = existing.delivery_assets.credentials;
+      }
     }
 
     if (merged.status === 'Deal' && !merged.deal_date) {

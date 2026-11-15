@@ -281,11 +281,16 @@ create policy "Users can delete their own profile"
   on public.profiles for delete
   using (auth.uid() = id or public.is_admin());
 
--- Policies untuk prospects
+-- Policies untuk prospects (Strict Data Isolation & Anti-IDOR)
 drop policy if exists "Team can view all shared prospects" on public.prospects;
-create policy "Team can view all shared prospects"
+drop policy if exists "Strict prospect access control" on public.prospects;
+create policy "Strict prospect access control"
   on public.prospects for select
-  using (auth.role() = 'authenticated');
+  using (
+    auth.uid() = user_id
+    or status = 'Deal'
+    or public.is_admin()
+  );
 
 drop policy if exists "Team can insert prospects" on public.prospects;
 create policy "Team can insert prospects"
@@ -293,9 +298,21 @@ create policy "Team can insert prospects"
   with check (auth.role() = 'authenticated');
 
 drop policy if exists "Team can update shared prospects" on public.prospects;
-create policy "Team can update shared prospects"
+drop policy if exists "Strict prospect update control" on public.prospects;
+create policy "Strict prospect update control"
   on public.prospects for update
-  using (auth.role() = 'authenticated');
+  using (
+    auth.uid() = user_id
+    or (
+      status = 'Deal'
+      and exists (
+        select 1 from public.profiles
+        where id = auth.uid()
+        and lower(username) = lower(public.prospects.project_assignee)
+      )
+    )
+    or public.is_admin()
+  );
 
 drop policy if exists "Only owner or admin can delete shared prospects" on public.prospects;
 create policy "Only owner or admin can delete shared prospects"

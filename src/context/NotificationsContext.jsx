@@ -151,7 +151,7 @@ export function NotificationsProvider({ children }) {
           title: `Domain / Hosting Expired: ${d.client_name}`,
           message: `${d.delivery_assets?.domain || d.client_name} (${rInfo.daysText}). Tagihan: ${formatCurrency(d.renewal_price, curr)}.`,
           actionLabel: 'Tagih Perpanjangan',
-          actionPath: `/deals?tab=renewals&open=${encodeURIComponent(d.id)}`,
+          actionPath: `/managed-hosting?open=${encodeURIComponent(d.id)}`,
           timestamp: (d.renewal_due_date || todayStr) + 'T07:30:00Z',
           badgeText: 'Expired',
         });
@@ -163,7 +163,7 @@ export function NotificationsProvider({ children }) {
           title: `Perpanjangan Segera Habis: ${d.client_name}`,
           message: `Jatuh tempo ${d.renewal_due_date} (${rInfo.daysText}) • Tagihan ${formatCurrency(d.renewal_price, curr)}.`,
           actionLabel: 'Lihat Langganan',
-          actionPath: `/deals?tab=renewals&open=${encodeURIComponent(d.id)}`,
+          actionPath: `/managed-hosting?open=${encodeURIComponent(d.id)}`,
           timestamp: todayStr + 'T08:15:00Z',
           badgeText: rInfo.daysText,
         });
