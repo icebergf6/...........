@@ -1,0 +1,182 @@
+{
+  "package.json": {
+    "mtime": 1794675196.9385076,
+    "seen": 1794675599.525636,
+    "ast_hash": "feda0c2ae40912abb8a8fcf9620a9bb8",
+    "semantic_hash": "feda0c2ae40912abb8a8fcf9620a9bb8"
+  },
+  "src/App.jsx": {
+    "mtime": 1794730471.546066,
+    "seen": 1794730533.1339025,
+    "ast_hash": "afbe38ed7b1008873bda4f6f495e0600",
+    "semantic_hash": ""
+  },
+  "src/components/Layout/DashboardLayout.jsx": {
+    "mtime": 1794731628.6071165,
+    "seen": 1794732045.327453,
+    "ast_hash": "f056471485de5d4ccd420114499faba8",
+    "semantic_hash": ""
+  },
+  "src/components/Prospects/AddProspectModal.jsx": {
+    "mtime": 1794723862.7845771,
+    "seen": 1794727423.890761,
+    "ast_hash": "33a22c19118b26630603e70a1f8ea26c",
+    "semantic_hash": ""
+  },
+  "src/components/Prospects/ProspectDetailDrawer.jsx": {
+    "mtime": 1794727353.605046,
+    "seen": 1794727423.890761,
+    "ast_hash": "b0e91dd815c7f0a7b1a93ff946f2df94",
+    "semantic_hash": ""
+  },
+  "src/context/AuthContext.jsx": {
+    "mtime": 1794723844.404132,
+    "seen": 1794727423.890761,
+    "ast_hash": "96ebe6e9eec07c020d5b8305dcbe4a01",
+    "semantic_hash": ""
+  },
+  "src/context/ProspectsContext.jsx": {
+    "mtime": 1794717670.672011,
+    "seen": 1794723424.8475332,
+    "ast_hash": "16b91b4366cc20bec88fedf3c4b69bdf",
+    "semantic_hash": ""
+  },
+  "src/lib/supabase.js": {
+    "mtime": 1794723834.9232647,
+    "seen": 1794727423.8927555,
+    "ast_hash": "b894c6a8b19d213eac16e1933d01fe56",
+    "semantic_hash": ""
+  },
+  "src/main.jsx": {
+    "mtime": 1794675543.983767,
+    "seen": 1794675599.525636,
+    "ast_hash": "d0123aa8ac95af4a7eb801ada1d51018",
+    "semantic_hash": "d0123aa8ac95af4a7eb801ada1d51018"
+  },
+  "src/pages/AdminPage.jsx": {
+    "mtime": 1794723858.1785097,
+    "seen": 1794727423.8927555,
+    "ast_hash": "5349aad5c7a73b61f5318e458598494d",
+    "semantic_hash": ""
+  },
+  "src/pages/AuthPage.jsx": {
+    "mtime": 1794723223.0440335,
+    "seen": 1794723424.8475332,
+    "ast_hash": "1ee91d06cfcb3274c386cca7e802fdcd",
+    "semantic_hash": ""
+  },
+  "src/pages/DealsFinancePage.jsx": {
+    "mtime": 1794716617.2828686,
+    "seen": 1794716890.5319006,
+    "ast_hash": "879826bb92ad2de858f708fcacb4c567",
+    "semantic_hash": ""
+  },
+  "src/pages/ProfilePage.jsx": {
+    "mtime": 1794716725.895906,
+    "seen": 1794716890.5319006,
+    "ast_hash": "b9184f469430f0e30942052a432fb7e1",
+    "semantic_hash": ""
+  },
+  "src/pages/ProspectsPage.jsx": {
+    "mtime": 1794716727.6599464,
+    "seen": 1794716890.5319006,
+    "ast_hash": "193882fe6c55c92f2f4a36141addb93b",
+    "semantic_hash": ""
+  },
+  "supabase/schema.sql": {
+    "mtime": 1794675207.047268,
+    "seen": 1794675599.525636,
+    "ast_hash": "",
+    "semantic_hash": ""
+  },
+  "vite.config.js": {
+    "mtime": 1794722785.3187058,
+    "seen": 1794723424.848871,
+    "ast_hash": "551b395b54dd66c5c64603d3610a1b02",
+    "semantic_hash": ""
+  },
+  "index.html": {
+    "mtime": 1794675200.73867,
+    "seen": 1794675599.525636,
+    "ast_hash": "978c1164b48f762f1e569a8f1e1d62c1",
+    "semantic_hash": "978c1164b48f762f1e569a8f1e1d62c1"
+  },
+  "src/context/AttendanceContext.jsx": {
+    "mtime": 1794717698.2729228,
+    "seen": 1794723424.8475332,
+    "ast_hash": "7705e9688e0060508af5b7e3a0271036",
+    "semantic_hash": ""
+  },
+  "src/pages/AttendancePage.jsx": {
+    "mtime": 1794727395.2307465,
+    "seen": 1794727423.8927555,
+    "ast_hash": "4d17f2a65c8eff24257f67ba5e8391c6",
+    "semantic_hash": ""
+  },
+  "src/pages/LeaderboardPage.jsx": {
+    "mtime": 1794716734.1713984,
+    "seen": 1794716890.5319006,
+    "ast_hash": "7eb8dd89f83bf727dbe860fbcf88defa",
+    "semantic_hash": ""
+  },
+  "src/components/Finance/AddPaymentAccountModal.jsx": {
+    "mtime": 1794678353.5804374,
+    "seen": 1794678526.400903,
+    "ast_hash": "52678f28601fb31ba74da1a1888636fc",
+    "semantic_hash": ""
+  },
+  "src/components/Finance/PaymentAccountsList.jsx": {
+    "mtime": 1794709672.35507,
+    "seen": 1794715689.8842618,
+    "ast_hash": "c7cb41de1dde32de7551ce3872599ee6",
+    "semantic_hash": ""
+  },
+  "src/context/PaymentAccountsContext.jsx": {
+    "mtime": 1794717701.7128966,
+    "seen": 1794723424.8475332,
+    "ast_hash": "adb4728c5437b04ff7b87a558000984d",
+    "semantic_hash": ""
+  },
+  "src/components/Finance/AnalyticsModal.jsx": {
+    "mtime": 1794693864.1159792,
+    "seen": 1794693963.523658,
+    "ast_hash": "2717f25fe4994cd501b8cb71f345b5d7",
+    "semantic_hash": ""
+  },
+  "src/components/Finance/InvoiceModal.jsx": {
+    "mtime": 1794716514.706298,
+    "seen": 1794716890.5319006,
+    "ast_hash": "8cb8c6cc7c453003c9d6596b42539e4b",
+    "semantic_hash": ""
+  },
+  "src/context/NotificationsContext.jsx": {
+    "mtime": 1794716451.61282,
+    "seen": 1794716890.5319006,
+    "ast_hash": "6846810e3f63315051c3edefd7051df0",
+    "semantic_hash": ""
+  },
+  "src/pages/NotificationsPage.jsx": {
+    "mtime": 1794709175.9194334,
+    "seen": 1794709271.8534331,
+    "ast_hash": "9f92e7ba92d03409e6da7c154add0a0c",
+    "semantic_hash": ""
+  },
+  "src/pages/ManagedHostingPage.jsx": {
+    "mtime": 1794731721.4426866,
+    "seen": 1794732045.3359866,
+    "ast_hash": "5f82f10a0b334a7df4d50aff50bd043d",
+    "semantic_hash": ""
+  },
+  "src/pages/GuidePage.jsx": {
+    "mtime": 1794731984.0670133,
+    "seen": 1794732045.334986,
+    "ast_hash": "e859907f4842e2b4bcda71644c3a1417",
+    "semantic_hash": ""
+  },
+  "package-lock.json": {
+    "mtime": 1794675584.7861695,
+    "seen": 1794676950.1331804,
+    "ast_hash": "b0e4064f8e78c3ce3faa32ed77b3572b",
+    "semantic_hash": ""
+  }
+}
