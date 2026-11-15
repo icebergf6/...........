@@ -25,6 +25,7 @@ import {
   CheckSquare,
   Server,
   BookOpen,
+  Sliders,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useProspects } from '../../context/ProspectsContext';
@@ -46,6 +47,7 @@ const ROUTE_TITLES = {
   '/profile': 'Profile & Komisi Saya',
   '/guide': 'Buku Panduan & SOP Operasional',
   '/admin': 'Admin Command Center',
+  '/admin/production': 'Admin — Produksi & Bagi Hasil',
   '/admin/projects': 'Admin — Manajemen Project',
   '/admin/users-lifecycle': 'Admin — Manajemen User Berkelanjutan',
   '/admin/audit': 'Admin — Audit Keaslian Kerja Harian',
@@ -497,6 +499,28 @@ export default function DashboardLayout() {
                   }}
                 >
                   Admin
+                </span>
+              </NavLink>
+
+              <NavLink
+                to="/admin/production"
+                onClick={() => setSidebarOpen(false)}
+                className={({ isActive }) =>
+                  `notion-nav-item ${isActive ? 'active' : ''}`
+                }
+              >
+                <Sliders size={16} />
+                <span className="flex-grow-1">Produksi &amp; Bagi Hasil</span>
+                <span
+                  className="notion-pill"
+                  style={{
+                    backgroundColor: '#fef3c7',
+                    color: '#92400e',
+                    fontSize: '10px',
+                    padding: '1px 6px',
+                  }}
+                >
+                  Baru
                 </span>
               </NavLink>
 

@@ -34,6 +34,7 @@ import {
   UserCheck,
   Briefcase,
   X,
+  Sliders,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { formatRupiah } from '../lib/supabase';
@@ -435,6 +436,26 @@ const FEATURE_MODULES = [
     proTip:
       'Gunakan tombol "Verifikasi Semua Hari Ini" pada tab Audit setelah memeriksa sampel prospek harian anggota tim.',
   },
+  {
+    id: 'mod-9',
+    number: '09',
+    role: 'Khusus Admin',
+    roleBadge: 'status-batal',
+    title: 'Produksi & Bagi Hasil (Penugasan 3-Mode & Split Komisi)',
+    path: '/admin/production',
+    icon: Sliders,
+    purpose:
+      'Pusat kendali paska-deal: tentukan mode penugasan (Solo Admin, Kolaborasi, atau Delegasi Penuh), lacak jejak hunter asal, atur persentase komisi/bagi hasil secara dinamis, dan verifikasi pencairan hak.',
+    steps: [
+      'Pilih Mode Pengerjaan: Kerjakan Sendiri (100% produksi oleh Admin), Kolaborasi (Admin + Tim Developer), atau Delegasi Penuh (Tim Developer independen).',
+      'Lacak Jejak Hunter Asal: Sistem secara otomatis menampilkan username hunter yang membawa prospek, kontak WhatsApp, nilai kontrak, serta nominal DP masuk.',
+      'Kalkulator Bagi Hasil Fleksibel: Sesuaikan persentase Hunter, Developer, dan Kas Studio secara dinamis per-deal dengan verifikasi total 100% dan kalkulasi rupiah otomatis.',
+      'Delivery Checklist 6 Tahap: Pantau tahapan produksi (Briefing, Wireframe, UI/UX, Koding, QC, Live Production) secara langsung dari kartu ringkasan atau modal edit.',
+      'Pencairan Komisi Terpisah: Admin dapat menandai status cair (Paid) secara independen untuk Komisi Hunter dan Bagi Hasil Developer.',
+    ],
+    proTip:
+      'Gunakan tombol "Export Data Produksi & Bagi Hasil" (.csv) untuk pembukuan kas studio dan bukti transfer komisi tim.',
+  },
 ];
 
 const PLAYBOOK_SCRIPTS = [
@@ -828,7 +849,7 @@ export default function GuidePage() {
     {
       id: 'features',
       step: '3',
-      label: isAdmin ? 'Panduan 8 Modul CRM' : 'Panduan 7 Modul CRM',
+      label: isAdmin ? 'Panduan 9 Modul CRM' : 'Panduan 7 Modul CRM',
       count: availableModules.length,
       icon: Compass,
     },
@@ -852,7 +873,7 @@ export default function GuidePage() {
             id: 'admin_sop',
             step: '6',
             label: 'SOP & Audit Admin',
-            count: 4,
+            count: 5,
             icon: ShieldCheck,
           },
         ]
@@ -1996,6 +2017,25 @@ export default function GuidePage() {
                   <li>Buka Tab 6 (<strong>Komisi &amp; Bagi Hasil</strong>) di halaman Admin untuk melihat daftar komisi hunter yang berstatus <em>Siap Cair</em>.</li>
                   <li>Setelah mentransfer dana ke rekening hunter, klik tombol <strong>Tandai Sudah Dibayar (Paid)</strong>.</li>
                   <li>Untuk menambah atau mengubah nomor rekening bank studio (BCA, Mandiri, SeaBank, PayPal, GoPay) yang tercetak di Invoice, buka halaman <strong>Klien Deal &amp; Keuangan</strong> lalu klik tombol pengaturan rekening.</li>
+                </ol>
+              </div>
+            </div>
+
+            <div className="col-12 col-md-6">
+              <div className="notion-card h-100">
+                <div className="d-flex align-items-center gap-2 mb-2">
+                  <span className="notion-pill pill-website">SOP ADMIN #5</span>
+                  <h3 className="h6 fw-bold mb-0">Penugasan 3-Mode &amp; Split Bagi Hasil Deal</h3>
+                </div>
+                <p className="text-muted mb-3" style={{ fontSize: '12.5px' }}>
+                  Mengatur siapa yang mengeksekusi proyek paska-deal dan membagi penghasilan secara transparan:
+                </p>
+                <ol className="text-secondary ps-3 mb-0" style={{ fontSize: '12.5px', lineHeight: 1.7 }}>
+                  <li>Buka menu <strong>Produksi &amp; Bagi Hasil</strong> (/admin/production).</li>
+                  <li>Lacak identitas Hunter asal yang membawa prospek, kontak WhatsApp, dan nominal DP masuk.</li>
+                  <li>Pilih Mode Kerja: <strong>Kerjakan Sendiri (Solo Admin)</strong>, <strong>Kolaborasi (Admin + Tim)</strong>, atau <strong>Delegasi Penuh (Tim)</strong>.</li>
+                  <li>Tentukan persentase Komisi Hunter, Porsi Dev, dan Kas Studio dengan validasi total 100%.</li>
+                  <li>Pantau 6-tahap delivery checklist dan tandai status pembayaran cair secara terpisah untuk Hunter dan Developer.</li>
                 </ol>
               </div>
             </div>

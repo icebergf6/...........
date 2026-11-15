@@ -22,6 +22,7 @@ const LeaderboardPage = lazy(() => import('./pages/LeaderboardPage'));
 const NotificationsPage = lazy(() => import('./pages/NotificationsPage'));
 const ProfilePage = lazy(() => import('./pages/ProfilePage'));
 const AdminPage = lazy(() => import('./pages/AdminPage'));
+const ProductionRevenuePage = lazy(() => import('./pages/ProductionRevenuePage'));
 const GuidePage = lazy(() => import('./pages/GuidePage'));
 
 function PageLoadingFallback() {
@@ -136,6 +137,14 @@ export default function App() {
                         element={
                           <AdminRoute>
                             <AdminPage defaultTab="overview" />
+                          </AdminRoute>
+                        }
+                      />
+                      <Route
+                        path="admin/production"
+                        element={
+                          <AdminRoute>
+                            <ProductionRevenuePage />
                           </AdminRoute>
                         }
                       />
