@@ -421,20 +421,19 @@ const FEATURE_MODULES = [
     number: '08',
     role: 'Khusus Admin',
     roleBadge: 'status-batal',
-    title: 'Admin Command Center (7 Sub-Menu Pengendali)',
+    title: 'Admin Command Center (6 Sub-Menu Pengendali)',
     path: '/admin',
     icon: ShieldCheck,
     purpose:
-      'Pusat kendali pemilik studio untuk mendaftarkan akun tim baru, mengaudit keaslian prospek harian, mengelola karir user, dan mengatur parameter finansial.',
+      'Pusat kendali pemilik studio untuk mendaftarkan akun tim baru, mengarahkan karir user berkelanjutan, memantau detail personel, dan mengatur parameter finansial.',
     steps: [
       'Tab 1 (Anggota Tim & Akses): Buat akun anggota tim baru dengan username & password langsung tanpa registrasi publik.',
       'Tab 2 (Manajemen Project): Tugaskan PIC pengembang web dan pantau status tahapan pengerjaan seluruh proyek klien.',
-      'Tab 3 (User Berkelanjutan): Atur jenjang karir (Junior, Senior, Core Partner), target jam/prospek personal, dan persentase komisi khusus per anggota.',
-      'Tab 4 (Audit Keaslian Kerja): Periksa korelasi waktu input prospek terhadap stopwatch absensi dan deteksi nomor WhatsApp duplikat.',
-      'Tab 5, 6, & 7: Kelola log absensi manual, tandai pencairan komisi hunter (Paid), serta atur rekening bank studio & backup JSON.',
+      'Tab 3 (User Berkelanjutan): Atur jenjang karir (Junior, Senior, Core Partner), target jam/prospek personal, evaluasi catatan, dan klik tombol Detail untuk melihat grafik jam kerja serta riwayat aktivitas personel.',
+      'Tab 4, 5, & 6: Kelola log absensi stopwatch tim, atur pencairan komisi hunter (Paid), serta rekening bank studio & backup JSON.',
     ],
     proTip:
-      'Gunakan tombol "Verifikasi Semua Hari Ini" pada tab Audit setelah memeriksa sampel prospek harian anggota tim.',
+      'Klik tombol "Detail" pada baris anggota tim di User Berkelanjutan untuk melihat grafik jam kerja harian, closing rate, dan riwayat aktivitas lengkap.',
   },
   {
     id: 'mod-9',
@@ -1972,16 +1971,16 @@ export default function GuidePage() {
               <div className="notion-card h-100">
                 <div className="d-flex align-items-center gap-2 mb-2">
                   <span className="notion-pill status-batal">SOP ADMIN #2</span>
-                  <h3 className="h6 fw-bold mb-0">Audit Keaslian Kerja Harian (Anti-Fraud)</h3>
+                  <h3 className="h6 fw-bold mb-0">Evaluasi Performa &amp; Detail User Berkelanjutan</h3>
                 </div>
                 <p className="text-muted mb-3" style={{ fontSize: '12.5px' }}>
-                  Dilakukan setiap sore untuk memastikan prospek yang diinput tim benar-benar hasil riset nyata:
+                  Dilakukan secara berkala untuk mengevaluasi jam kerja, output prospek, dan tingkat keberhasilan anggota tim:
                 </p>
                 <ol className="text-secondary ps-3 mb-0" style={{ fontSize: '12.5px', lineHeight: 1.7 }}>
-                  <li>Buka menu <strong>Audit Keaslian Kerja</strong> (/admin/audit) dan pilih tanggal hari ini.</li>
-                  <li>Periksa kolom <strong>Korelasi Stopwatch</strong>: pastikan berstatus hijau (<em>Saat Jam Stopwatch Aktif</em>).</li>
-                  <li>Periksa kolom <strong>Deteksi Duplikat</strong>: sistem otomatis menandai merah apabila ada nomor WhatsApp atau nama bisnis yang sama diinput ulang.</li>
-                  <li>Klik tombol nomor WhatsApp pada sampel prospek untuk memverifikasi keaktifan nomor bisnis, lalu klik tombol <strong>Verifikasi Semua Hari Ini</strong>.</li>
+                  <li>Buka menu <strong>User Berkelanjutan</strong> (/admin/users-lifecycle).</li>
+                  <li>Klik tombol <strong>Detail</strong> pada baris anggota tim untuk melihat halaman detail lengkap beserta grafik jam kerja.</li>
+                  <li>Analisis grafik jam kerja harian vs target personal, closing rate (persentase deal), serta histori log stopwatch.</li>
+                  <li>Beri feedback terarah pada tab <strong>Evaluasi &amp; Catatan Admin</strong> lalu simpan langsung ke profil user.</li>
                 </ol>
               </div>
             </div>

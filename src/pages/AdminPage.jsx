@@ -1,5 +1,5 @@
 import React, { useMemo, useState, useEffect } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import {
   ShieldCheck,
   Users,
@@ -99,12 +99,12 @@ export default function AdminPage({ defaultTab }) {
 
   const todayDate = getTodayDateString();
   const location = useLocation();
+  const navigate = useNavigate();
 
   // Dynamic activeTab resolving from location or defaultTab
   const initialTab = useMemo(() => {
     if (location.pathname.includes('/projects')) return 'projects';
     if (location.pathname.includes('/users-lifecycle')) return 'lifecycle';
-    if (location.pathname.includes('/audit')) return 'audit';
     if (defaultTab) return defaultTab === 'overview' ? 'users' : defaultTab;
     return 'users';
   }, [defaultTab, location.pathname]);
@@ -114,7 +114,6 @@ export default function AdminPage({ defaultTab }) {
   useEffect(() => {
     if (location.pathname.includes('/projects')) setActiveTab('projects');
     else if (location.pathname.includes('/users-lifecycle')) setActiveTab('lifecycle');
-    else if (location.pathname.includes('/audit')) setActiveTab('audit');
     else if (defaultTab) setActiveTab(defaultTab === 'overview' ? 'users' : defaultTab);
   }, [location.pathname, defaultTab]);
 
@@ -146,13 +145,6 @@ export default function AdminPage({ defaultTab }) {
     customCommissionRate: 15,
     evaluationNotes: '',
   });
-
-  // Audit Keaslian Kerja States
-  const [auditUser, setAuditUser] = useState('ALL');
-  const [auditDate, setAuditDate] = useState(todayDate);
-  const [auditStatusFilter, setAuditStatusFilter] = useState('ALL');
-  const [auditSearch, setAuditSearch] = useState('');
-  const [auditNoteInputs, setAuditNoteInputs] = useState({});
 
   // Filters for Attendance tab
   const [selectedUser, setSelectedUser] = useState('ALL');
@@ -902,206 +894,6 @@ export default function AdminPage({ defaultTab }) {
     }
   }
 
-  // =========================================================================
-  // TAB: AUDIT KEASLIAN KERJA HARIAN LOGIC
-  // =========================================================================
-  const auditProspects = useMemo(() => {
-    return prospects.filter((p) => {
-      const createdDate = (p.created_at || '').split('T')[0];
-      const matchDate = auditDate === 'ALL' || createdDate === auditDate;
-      const matchUser =
-        auditUser === 'ALL' ||
-        (p.created_by_username || '').toLowerCase() === auditUser.toLowerCase();
-      const vStatus = p.verification_status || 'pending';
-      const matchStatus =
-        auditStatusFilter === 'ALL' || vStatus === auditStatusFilter;
-      const q = auditSearch.toLowerCase();
-      const matchSearch =
-        !q ||
-        (p.client_name || '').toLowerCase().includes(q) ||
-        (p.whatsapp_number || '').includes(q) ||
-        (p.notes || '').toLowerCase().includes(q);
-      return matchDate && matchUser && matchStatus && matchSearch;
-    });
-  }, [prospects, auditDate, auditUser, auditStatusFilter, auditSearch]);
-
-  const auditAttendanceForDate = useMemo(() => {
-    return attendanceLogs.filter((l) => {
-      const matchDate = l.work_date === auditDate;
-      const matchUser =
-        auditUser === 'ALL' ||
-        (l.username || '').toLowerCase() === auditUser.toLowerCase();
-      return matchDate && matchUser;
-    });
-  }, [attendanceLogs, auditDate, auditUser]);
-
-  const auditTotalSeconds = useMemo(() => {
-    return auditAttendanceForDate.reduce(
-      (acc, l) => acc + calculateLiveSeconds(l, nowTick),
-      0
-    );
-  }, [auditAttendanceForDate, calculateLiveSeconds, nowTick]);
-
-  function checkProspectDuplicate(p) {
-    const rawWa = (p.whatsapp_number || '').replace(/\D/g, '');
-    const cleanName = (p.client_name || '').trim().toLowerCase();
-
-    let dupCount = 0;
-    prospects.forEach((item) => {
-      if (item.id === p.id) return;
-      const itemWa = (item.whatsapp_number || '').replace(/\D/g, '');
-      const itemName = (item.client_name || '').trim().toLowerCase();
-      if (
-        (rawWa && rawWa.length >= 8 && itemWa === rawWa) ||
-        (cleanName && itemName === cleanName)
-      ) {
-        dupCount++;
-      }
-    });
-    return {
-      isDuplicate: dupCount > 0,
-      dupCount,
-    };
-  }
-
-  function checkWorkHourCorrelation(p) {
-    if (!p.created_at)
-      return {
-        duringWork: false,
-        label: 'Waktu Tidak Tercatat',
-        badgeClass: 'bg-light text-muted border',
-      };
-    const pDate = p.created_at.split('T')[0];
-    const pTime = new Date(p.created_at).getTime();
-
-    const creator = (p.created_by_username || '').toLowerCase();
-    const userDayLogs = attendanceLogs.filter(
-      (l) =>
-        l.work_date === pDate &&
-        (l.username || '').toLowerCase() === creator
-    );
-
-    if (userDayLogs.length === 0) {
-      return {
-        duringWork: false,
-        label: '⚠️ Tanpa Log Stopwatch',
-        badgeClass:
-          'bg-warning-subtle text-warning-emphasis border border-warning-subtle',
-      };
-    }
-
-    let isDuring = false;
-    for (const log of userDayLogs) {
-      if (!log.check_in_at) continue;
-      const inTime = new Date(log.check_in_at).getTime();
-      const outTime = log.check_out_at
-        ? new Date(log.check_out_at).getTime()
-        : log.status === 'running'
-        ? Date.now()
-        : inTime +
-          (log.accumulated_seconds || log.total_seconds || 0) * 1000;
-
-      // 1 minute tolerance
-      if (pTime >= inTime - 60000 && pTime <= outTime + 60000) {
-        isDuring = true;
-        break;
-      }
-    }
-
-    if (isDuring) {
-      return {
-        duringWork: true,
-        label: '✅ Saat Jam Stopwatch Aktif',
-        badgeClass:
-          'bg-success-subtle text-success-emphasis border border-success-subtle',
-      };
-    }
-
-    return {
-      duringWork: false,
-      label: '⚠️ Di Luar Jam Stopwatch',
-      badgeClass:
-        'bg-danger-subtle text-danger-emphasis border border-danger-subtle',
-    };
-  }
-
-  async function handleSetVerificationStatus(prospectId, status) {
-    await updateProspect(prospectId, {
-      verification_status: status,
-      verified_by: profile?.username || 'admin',
-      verified_at: new Date().toISOString(),
-    });
-    showTempFeedback(`Status verifikasi diubah ke "${status}"`);
-  }
-
-  async function handleSetVerificationNote(prospectId, noteText) {
-    await updateProspect(prospectId, {
-      verification_notes: noteText,
-      verified_by: profile?.username || 'admin',
-      verified_at: new Date().toISOString(),
-    });
-  }
-
-  async function handleBatchVerifyAuditDate() {
-    if (auditProspects.length === 0) return;
-    if (
-      !window.confirm(
-        `Verifikasi semua (${auditProspects.length}) prospek pada tanggal ${auditDate} sebagai Terverifikasi Asli?`
-      )
-    ) {
-      return;
-    }
-    for (const p of auditProspects) {
-      await updateProspect(p.id, {
-        verification_status: 'verified',
-        verified_by: profile?.username || 'admin',
-        verified_at: new Date().toISOString(),
-      });
-    }
-    showTempFeedback(
-      `Semua prospek tanggal ${auditDate} berhasil diverifikasi!`
-    );
-  }
-
-  function handleExportAuditReportCSV() {
-    exportToCSV(`audit-keaslian-prospek-${auditDate}`, auditProspects, [
-      {
-        header: 'Tanggal Input',
-        transform: (r) => (r.created_at || '').split('T')[0],
-      },
-      {
-        header: 'Jam Input (WIB)',
-        transform: (r) =>
-          r.created_at
-            ? new Date(r.created_at).toLocaleTimeString('id-ID')
-            : '-',
-      },
-      { header: 'Hunter (Penginput)', key: 'created_by_username' },
-      { header: 'Nama Klien / Bisnis', key: 'client_name' },
-      { header: 'Platform Sumber', key: 'source_platform' },
-      { header: 'Nomor WhatsApp', key: 'whatsapp_number' },
-      { header: 'Handle / Link Sosmed', key: 'social_handle' },
-      {
-        header: 'Korelasi Stopwatch',
-        transform: (r) => checkWorkHourCorrelation(r).label,
-      },
-      {
-        header: 'Deteksi Duplikat',
-        transform: (r) =>
-          checkProspectDuplicate(r).isDuplicate ? 'Duplikat' : 'Unik/Asli',
-      },
-      {
-        header: 'Status Verifikasi',
-        transform: (r) => r.verification_status || 'pending',
-      },
-      {
-        header: 'Catatan Audit Admin',
-        transform: (r) => r.verification_notes || '-',
-      },
-      { header: 'Diverifikasi Oleh', transform: (r) => r.verified_by || '-' },
-    ]);
-  }
-
   return (
     <div>
       {/* Header */}
@@ -1116,7 +908,7 @@ export default function AdminPage({ defaultTab }) {
             </span>
           </div>
           <p className="notion-page-subtitle">
-            Kelola akun anggota tim, pantau eksekusi project, arahkan karir user berkelanjutan, dan audit keaslian kerja harian.
+            Kelola akun anggota tim, pantau eksekusi project, arahkan karir user berkelanjutan, dan pantau rincian performa personel.
           </p>
         </div>
 
@@ -1130,28 +922,6 @@ export default function AdminPage({ defaultTab }) {
               <UserPlus size={15} />
               <span>Tambah Anggota Tim</span>
             </button>
-          )}
-
-          {activeTab === 'audit' && (
-            <>
-              <button
-                type="button"
-                className="btn-notion-primary"
-                onClick={handleBatchVerifyAuditDate}
-                title="Tandai semua prospek pada tanggal ini sebagai Terverifikasi Asli"
-              >
-                <CheckCircle size={14} />
-                <span>Verifikasi Semua Hari Ini</span>
-              </button>
-              <button
-                type="button"
-                className="btn-notion-outline"
-                onClick={handleExportAuditReportCSV}
-              >
-                <Download size={14} />
-                <span>Export Audit (CSV)</span>
-              </button>
-            </>
           )}
 
           {activeTab === 'attendance' && (
@@ -1357,21 +1127,6 @@ export default function AdminPage({ defaultTab }) {
           type="button"
           className="btn btn-sm flex-shrink-0 d-inline-flex align-items-center gap-2 px-3 py-2 rounded border-0"
           style={{
-            backgroundColor: activeTab === 'audit' ? '#2f2f2f' : 'transparent',
-            color: activeTab === 'audit' ? '#ffffff' : 'var(--notion-text)',
-            fontWeight: activeTab === 'audit' ? 600 : 500,
-            fontSize: '13px',
-          }}
-          onClick={() => setActiveTab('audit')}
-        >
-          <CheckSquare size={14} />
-          <span>4. Audit Keaslian Kerja ({auditProspects.length})</span>
-        </button>
-
-        <button
-          type="button"
-          className="btn btn-sm flex-shrink-0 d-inline-flex align-items-center gap-2 px-3 py-2 rounded border-0"
-          style={{
             backgroundColor:
               activeTab === 'attendance' ? '#2f2f2f' : 'transparent',
             color:
@@ -1382,7 +1137,7 @@ export default function AdminPage({ defaultTab }) {
           onClick={() => setActiveTab('attendance')}
         >
           <Clock size={14} />
-          <span>5. Kontrol Absensi ({attendanceLogs.length})</span>
+          <span>4. Kontrol Absensi ({attendanceLogs.length})</span>
         </button>
 
         <button
@@ -1399,7 +1154,7 @@ export default function AdminPage({ defaultTab }) {
           onClick={() => setActiveTab('commissions')}
         >
           <Wallet size={14} />
-          <span>6. Komisi &amp; Bagi Hasil</span>
+          <span>5. Komisi &amp; Bagi Hasil</span>
         </button>
 
         <button
@@ -1414,7 +1169,7 @@ export default function AdminPage({ defaultTab }) {
           onClick={() => setActiveTab('system')}
         >
           <Database size={14} />
-          <span>7. Rekening &amp; Konfigurasi</span>
+          <span>6. Rekening &amp; Konfigurasi</span>
         </button>
       </div>
 
@@ -2103,6 +1858,17 @@ export default function AdminPage({ defaultTab }) {
                           <div className="d-flex align-items-center justify-content-end gap-1">
                             <button
                               type="button"
+                              className="btn-notion-outline py-1 px-2"
+                              style={{ fontSize: '11.5px' }}
+                              onClick={() => navigate(`/admin/users/${m.username}`)}
+                              title={`Lihat detail lengkap & seluruh aktivitas @${m.username}`}
+                            >
+                              <Eye size={12} />
+                              <span>Detail</span>
+                            </button>
+
+                            <button
+                              type="button"
                               className="btn-notion-primary py-1 px-2"
                               style={{ fontSize: '11.5px' }}
                               onClick={() => handleOpenLifecycleModal(m)}
@@ -2149,368 +1915,7 @@ export default function AdminPage({ defaultTab }) {
       )}
 
       {/* ===================================================================
-          TAB 4: AUDIT KEASLIAN KERJA HARIAN & CEK PROSPEK
-      =================================================================== */}
-      {activeTab === 'audit' && (
-        <div>
-          <div className="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-3">
-            <div>
-              <div className="fw-bold" style={{ fontSize: '15px' }}>
-                Audit Keaslian Kerja Harian &amp; Verifikasi Prospek Tim
-              </div>
-              <div className="text-muted" style={{ fontSize: '12px' }}>
-                Cek jumlah prospek yang diinput per hari, bandingkan korelasi jam stopwatch, lakukan tes kontak WhatsApp 1-klik, dan deteksi duplikasi klaim.
-              </div>
-            </div>
-
-            <div className="d-flex flex-wrap align-items-center gap-2">
-              {/* Filter User */}
-              <select
-                className="notion-select"
-                value={auditUser}
-                onChange={(e) => setAuditUser(e.target.value)}
-              >
-                <option value="ALL">Semua Anggota Tim ({allTeamMembers.length})</option>
-                {allTeamMembers.map((u) => (
-                  <option key={u.username} value={u.username}>
-                    @{u.username}
-                  </option>
-                ))}
-              </select>
-
-              {/* Filter Tanggal */}
-              <input
-                type="date"
-                className="notion-input"
-                style={{ width: '150px' }}
-                value={auditDate}
-                onChange={(e) => setAuditDate(e.target.value)}
-              />
-
-              {/* Filter Status Verifikasi */}
-              <select
-                className="notion-select"
-                value={auditStatusFilter}
-                onChange={(e) => setAuditStatusFilter(e.target.value)}
-              >
-                <option value="ALL">Semua Status Verifikasi</option>
-                <option value="verified">✅ Terverifikasi Asli</option>
-                <option value="review">⏳ Perlu Review</option>
-                <option value="rejected">❌ Ditolak / Data Palsu</option>
-                <option value="pending">Belum Diperiksa</option>
-              </select>
-
-              <div className="position-relative" style={{ minWidth: '180px' }}>
-                <Search
-                  size={13}
-                  className="position-absolute text-muted"
-                  style={{
-                    left: '10px',
-                    top: '50%',
-                    transform: 'translateY(-50%)',
-                  }}
-                />
-                <input
-                  type="text"
-                  className="notion-input w-100"
-                  style={{ paddingLeft: '28px', fontSize: '12px' }}
-                  placeholder="Cari prospek/WA..."
-                  value={auditSearch}
-                  onChange={(e) => setAuditSearch(e.target.value)}
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Daily Output & Correlation Summary Cards */}
-          <div className="row g-2 mb-3">
-            <div className="col-6 col-md-3">
-              <div className="p-3 bg-white rounded border">
-                <div className="text-muted d-flex align-items-center gap-1" style={{ fontSize: '11.5px' }}>
-                  <Target size={13} className="text-primary" />
-                  <span>Total Prospek Diinput</span>
-                </div>
-                <div className="fs-5 fw-bold text-dark mt-1">
-                  {auditProspects.length} Prospek
-                </div>
-                <div className="text-muted mt-1" style={{ fontSize: '11px' }}>
-                  Tanggal: {auditDate}
-                </div>
-              </div>
-            </div>
-
-            <div className="col-6 col-md-3">
-              <div className="p-3 bg-white rounded border">
-                <div className="text-muted d-flex align-items-center gap-1" style={{ fontSize: '11.5px' }}>
-                  <Clock size={13} className="text-success" />
-                  <span>Durasi Stopwatch Anggota</span>
-                </div>
-                <div className="fs-5 fw-bold text-success mt-1">
-                  {formatDurationHuman(auditTotalSeconds)}
-                </div>
-                <div className="text-muted mt-1" style={{ fontSize: '11px' }}>
-                  {auditAttendanceForDate.length > 0 ? 'Sesi tercatat aktif' : 'Belum ada log absen'}
-                </div>
-              </div>
-            </div>
-
-            <div className="col-6 col-md-3">
-              <div className="p-3 bg-white rounded border">
-                <div className="text-muted d-flex align-items-center gap-1" style={{ fontSize: '11.5px' }}>
-                  <Sparkles size={13} className="text-warning" />
-                  <span>Rasio Input / Jam Stopwatch</span>
-                </div>
-                <div className="fs-5 fw-bold text-primary mt-1">
-                  {auditTotalSeconds > 0
-                    ? (auditProspects.length / (auditTotalSeconds / 3600)).toFixed(1)
-                    : 0}{' '}
-                  <span style={{ fontSize: '13px', fontWeight: 500 }}>prospek / jam</span>
-                </div>
-                <div className="text-muted mt-1" style={{ fontSize: '11px' }}>
-                  Indikator produktivitas wajar
-                </div>
-              </div>
-            </div>
-
-            <div className="col-6 col-md-3">
-              <div className="p-3 bg-white rounded border">
-                <div className="text-muted d-flex align-items-center gap-1" style={{ fontSize: '11.5px' }}>
-                  <CheckCircle2 size={13} className="text-success" />
-                  <span>Status Keaslian Data</span>
-                </div>
-                <div className="mt-1" style={{ fontSize: '12px' }}>
-                  <span className="text-success fw-bold">
-                    {auditProspects.filter((p) => p.verification_status === 'verified').length} Asli
-                  </span>
-                  {' • '}
-                  <span className="text-warning fw-bold">
-                    {auditProspects.filter((p) => p.verification_status === 'review').length} Review
-                  </span>
-                  {' • '}
-                  <span className="text-danger fw-bold">
-                    {auditProspects.filter((p) => p.verification_status === 'rejected').length} Palsu
-                  </span>
-                </div>
-                <div className="text-muted mt-1" style={{ fontSize: '11px' }}>
-                  {auditProspects.filter((p) => !p.verification_status || p.verification_status === 'pending').length} belum diperiksa
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Audit Verification Table */}
-          <div className="notion-table-wrapper">
-            <div className="table-responsive">
-              <table className="notion-table">
-                <thead>
-                  <tr>
-                    <th style={{ minWidth: '150px' }}>Waktu Input &amp; Hunter</th>
-                    <th style={{ minWidth: '180px' }}>Klien &amp; Platform</th>
-                    <th style={{ minWidth: '160px' }}>Korelasi Stopwatch</th>
-                    <th style={{ minWidth: '190px' }}>Uji Kontak WA &amp; Medsos</th>
-                    <th style={{ minWidth: '130px' }}>Deteksi Duplikat</th>
-                    <th style={{ minWidth: '170px' }}>Verifikasi Keaslian</th>
-                    <th style={{ minWidth: '220px' }}>Catatan Audit Admin</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {auditProspects.length === 0 ? (
-                    <tr>
-                      <td colSpan={7} className="text-center py-4 text-muted">
-                        Tidak ada prospek yang diinput pada tanggal {auditDate} untuk filter ini.
-                      </td>
-                    </tr>
-                  ) : (
-                    auditProspects.map((p) => {
-                      const corr = checkWorkHourCorrelation(p);
-                      const dup = checkProspectDuplicate(p);
-                      const cleanWa = (p.whatsapp_number || '').replace(/\D/g, '');
-                      const waLink = cleanWa
-                        ? `https://wa.me/${cleanWa.startsWith('0') ? '62' + cleanWa.slice(1) : cleanWa}?text=${encodeURIComponent(
-                            `Halo kak, apakah benar ini dengan ${p.client_name}? Kami dari A-Tier Studio.`
-                          )}`
-                        : null;
-
-                      const vStatus = p.verification_status || 'pending';
-
-                      return (
-                        <tr key={p.id}>
-                          <td>
-                            <div className="fw-semibold" style={{ fontSize: '12px' }}>
-                              {p.created_at
-                                ? new Date(p.created_at).toLocaleTimeString('id-ID', {
-                                    hour: '2-digit',
-                                    minute: '2-digit',
-                                    second: '2-digit',
-                                  }) + ' WIB'
-                                : '-'}
-                            </div>
-                            <div className="text-muted" style={{ fontSize: '11px' }}>
-                              Oleh: <strong>@{p.created_by_username || 'tim'}</strong>
-                            </div>
-                            <div className="text-muted" style={{ fontSize: '10.5px' }}>
-                              ID: {p.id.slice(-6)}
-                            </div>
-                          </td>
-
-                          <td>
-                            <div className="fw-bold text-truncate" style={{ maxWidth: '170px' }}>
-                              {p.client_name}
-                            </div>
-                            <div className="d-flex align-items-center gap-1 mt-1">
-                              <span className="notion-pill" style={{ fontSize: '10.5px' }}>
-                                {p.source_platform}
-                              </span>
-                              <span className="text-muted text-truncate" style={{ fontSize: '11px', maxWidth: '100px' }}>
-                                {p.social_handle || '-'}
-                              </span>
-                            </div>
-                            {p.notes && (
-                              <div className="text-muted text-truncate mt-1" style={{ fontSize: '11px', maxWidth: '180px' }} title={p.notes}>
-                                📝 {p.notes}
-                              </div>
-                            )}
-                          </td>
-
-                          <td>
-                            <span className={`badge ${corr.badgeClass}`} style={{ fontSize: '11px' }}>
-                              {corr.label}
-                            </span>
-                            <div className="text-muted mt-1" style={{ fontSize: '10.5px' }}>
-                              {corr.duringWork
-                                ? 'Input saat sesi stopwatch jalan'
-                                : 'Input di luar sesi aktif'}
-                            </div>
-                          </td>
-
-                          <td>
-                            <div className="d-flex flex-column gap-1">
-                              {waLink ? (
-                                <a
-                                  href={waLink}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="btn btn-sm btn-outline-success py-1 px-2 d-inline-flex align-items-center justify-content-between gap-1 text-decoration-none"
-                                  style={{ fontSize: '11px' }}
-                                  title="Tes kirim pesan ke nomor ini via WhatsApp"
-                                >
-                                  <span className="d-inline-flex align-items-center gap-1 text-truncate">
-                                    <Phone size={11} />
-                                    <span>{p.whatsapp_number}</span>
-                                  </span>
-                                  <ExternalLink size={10} />
-                                </a>
-                              ) : (
-                                <span className="text-muted" style={{ fontSize: '11px' }}>
-                                  Tidak ada nomor WA
-                                </span>
-                              )}
-
-                              {p.social_handle ? (
-                                <div className="d-flex align-items-center gap-1" style={{ fontSize: '11px' }}>
-                                  <Globe size={11} className="text-muted" />
-                                  <span className="text-truncate" style={{ maxWidth: '140px' }}>
-                                    {p.social_handle}
-                                  </span>
-                                </div>
-                              ) : null}
-                            </div>
-                          </td>
-
-                          <td>
-                            {dup.isDuplicate ? (
-                              <span
-                                className="badge bg-danger-subtle text-danger border border-danger-subtle"
-                                style={{ fontSize: '11px' }}
-                                title="Nomor atau nama klien terdeteksi sudah pernah ada di database CRM"
-                              >
-                                ⚠️ Duplikat ({dup.dupCount}x)
-                              </span>
-                            ) : (
-                              <span
-                                className="badge bg-success-subtle text-success border border-success-subtle"
-                                style={{ fontSize: '11px' }}
-                              >
-                                ✓ Unik / Asli
-                              </span>
-                            )}
-                          </td>
-
-                          <td>
-                            <div className="d-flex flex-wrap gap-1">
-                              <button
-                                type="button"
-                                className={`btn btn-sm p-1 px-2 border rounded ${
-                                  vStatus === 'verified'
-                                    ? 'bg-success text-white border-success fw-bold'
-                                    : 'bg-white text-secondary'
-                                }`}
-                                style={{ fontSize: '11px' }}
-                                onClick={() => handleSetVerificationStatus(p.id, 'verified')}
-                                title="Tandai sebagai data asli & valid"
-                              >
-                                ✓ Asli
-                              </button>
-
-                              <button
-                                type="button"
-                                className={`btn btn-sm p-1 px-2 border rounded ${
-                                  vStatus === 'review'
-                                    ? 'bg-warning text-dark border-warning fw-bold'
-                                    : 'bg-white text-secondary'
-                                }`}
-                                style={{ fontSize: '11px' }}
-                                onClick={() => handleSetVerificationStatus(p.id, 'review')}
-                                title="Tandai butuh review lebih lanjut"
-                              >
-                                ⏳ Review
-                              </button>
-
-                              <button
-                                type="button"
-                                className={`btn btn-sm p-1 px-2 border rounded ${
-                                  vStatus === 'rejected'
-                                    ? 'bg-danger text-white border-danger fw-bold'
-                                    : 'bg-white text-secondary'
-                                }`}
-                                style={{ fontSize: '11px' }}
-                                onClick={() => handleSetVerificationStatus(p.id, 'rejected')}
-                                title="Tolak / indikasi data palsu"
-                              >
-                                ✕ Palsu
-                              </button>
-                            </div>
-
-                            {p.verified_by && (
-                              <div className="text-muted mt-1" style={{ fontSize: '10.5px' }}>
-                                Diverifikasi oleh @{p.verified_by}
-                              </div>
-                            )}
-                          </td>
-
-                          <td>
-                            <input
-                              type="text"
-                              className="notion-input w-100"
-                              style={{ fontSize: '11.5px', padding: '3px 8px' }}
-                              placeholder="Tulis catatan audit admin..."
-                              defaultValue={p.verification_notes || ''}
-                              onBlur={(e) => handleSetVerificationNote(p.id, e.target.value)}
-                            />
-                          </td>
-                        </tr>
-                      );
-                    })
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ===================================================================
-          TAB 2: KONTROL ABSENSI & KOREKSI JAM KERJA
+          TAB 4: KONTROL ABSENSI & KOREKSI JAM KERJA
       =================================================================== */}
       {activeTab === 'attendance' && (
         <div>

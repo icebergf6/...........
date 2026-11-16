@@ -50,7 +50,7 @@ const ROUTE_TITLES = {
   '/admin/production': 'Admin — Produksi & Bagi Hasil',
   '/admin/projects': 'Admin — Manajemen Project',
   '/admin/users-lifecycle': 'Admin — Manajemen User Berkelanjutan',
-  '/admin/audit': 'Admin — Audit Keaslian Kerja Harian',
+  '/admin/users': 'Admin — Detail Personel Tim',
 };
 
 export default function DashboardLayout() {
@@ -544,17 +544,6 @@ export default function DashboardLayout() {
               >
                 <UserCheck size={16} />
                 <span className="flex-grow-1">User Berkelanjutan</span>
-              </NavLink>
-
-              <NavLink
-                to="/admin/audit"
-                onClick={() => setSidebarOpen(false)}
-                className={({ isActive }) =>
-                  `notion-nav-item ${isActive ? 'active' : ''}`
-                }
-              >
-                <CheckSquare size={16} />
-                <span className="flex-grow-1">Audit Keaslian Kerja</span>
               </NavLink>
             </>
           )}

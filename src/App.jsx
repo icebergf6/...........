@@ -24,6 +24,7 @@ const ProfilePage = lazy(() => import('./pages/ProfilePage'));
 const AdminPage = lazy(() => import('./pages/AdminPage'));
 const ProductionRevenuePage = lazy(() => import('./pages/ProductionRevenuePage'));
 const GuidePage = lazy(() => import('./pages/GuidePage'));
+const UserDetailPage = lazy(() => import('./pages/UserDetailPage'));
 
 function PageLoadingFallback() {
   return (
@@ -165,10 +166,18 @@ export default function App() {
                         }
                       />
                       <Route
-                        path="admin/audit"
+                        path="admin/users/:username"
                         element={
                           <AdminRoute>
-                            <AdminPage defaultTab="audit" />
+                            <UserDetailPage />
+                          </AdminRoute>
+                        }
+                      />
+                      <Route
+                        path="admin/users-lifecycle/:username"
+                        element={
+                          <AdminRoute>
+                            <UserDetailPage />
                           </AdminRoute>
                         }
                       />
