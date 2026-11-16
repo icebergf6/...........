@@ -557,6 +557,11 @@ Mohon konfirmasinya agar kami dapat mengirimkan Invoice Perpanjangan resmi dan m
       },
       { header: 'Sumber Platform', key: 'source_platform' },
       { header: 'Akun Sosmed / Web', key: 'social_handle' },
+      {
+        header: 'Nomor WhatsApp',
+        transform: (row) =>
+          row.whatsapp_number ? `="${row.whatsapp_number}"` : '-',
+      },
       { header: 'Ditambahkan Oleh', key: 'created_by_username' },
       { header: 'Mata Uang', key: 'currency' },
       { header: 'Nilai Kontrak', key: 'project_value' },
@@ -564,10 +569,12 @@ Mohon konfirmasinya agar kami dapat mengirimkan Invoice Perpanjangan resmi dan m
       {
         header: 'Sisa Pelunasan',
         transform: (row) =>
-          Math.max(
-            0,
-            (Number(row.project_value) || 0) - (Number(row.dp_amount) || 0)
-          ),
+          row.payment_status === 'Lunas'
+            ? 0
+            : Math.max(
+                0,
+                (Number(row.project_value) || 0) - (Number(row.dp_amount) || 0)
+              ),
       },
       { header: 'Status Pembayaran', key: 'payment_status' },
       { header: 'Tanggal Deal', key: 'deal_date' },
@@ -1140,7 +1147,12 @@ Mohon konfirmasinya agar kami dapat mengirimkan Invoice Perpanjangan resmi dan m
                 const curr = client.currency || 'IDR';
                 const isUsd = curr === 'USD';
                 const val = Number(client.project_value) || 0;
-                const dp = Number(client.dp_amount) || 0;
+                const dp =
+                  client.payment_status === 'Lunas'
+                    ? val > 0
+                      ? val
+                      : Number(client.dp_amount) || 0
+                    : Number(client.dp_amount) || 0;
                 const remaining = Math.max(0, val - dp);
                 const isFullManaged =
                   client.management_type !== 'project_only';
