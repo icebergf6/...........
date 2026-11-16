@@ -38,12 +38,14 @@ import {
   formatUSD,
   formatCurrency,
   getTodayDateString,
+  getOffsetDateString,
   exportToCSV,
   normalizeWhatsAppNumber,
   getPlatformBadgeClass,
   getStatusBadgeClass,
   calculateCommission,
   getFollowUpBadgeMeta,
+  sanitizeSafeUrl,
 } from '../lib/supabase';
 
 export default function UserDetailPage() {
@@ -51,9 +53,9 @@ export default function UserDetailPage() {
   const navigate = useNavigate();
   const { profile, teamUsers, adminUpdateUser } = useAuth();
   const { attendanceLogs, nowTick, calculateLiveSeconds } = useAttendance();
-  const { allTeamProspects, scopedProspects, dealClients, updateProspect } = useProspects();
+  const { allTeamProspects, prospects: userScopedProspects, dealClients, updateProspect } = useProspects();
 
-  const prospects = allTeamProspects || scopedProspects || [];
+  const prospects = allTeamProspects || userScopedProspects || [];
   const todayDate = getTodayDateString();
 
   // Active detail subtab
@@ -93,28 +95,33 @@ export default function UserDetailPage() {
     };
   }, [teamUsers, username, profile]);
 
-  // Synchronize initial evaluation notes
+  // Synchronize initial evaluation notes cleanly
   React.useEffect(() => {
-    if (targetUser?.evaluationNotes) {
-      setEvalNotesInput(targetUser.evaluationNotes);
-    }
-  }, [targetUser]);
+    setEvalNotesInput(targetUser?.evaluationNotes || '');
+  }, [targetUser?.evaluationNotes, targetUser?.id, targetUser?.username]);
 
   const unameLower = (username || '').toLowerCase();
+  const targetUserId = targetUser?.id;
 
-  // Filter logs for this user
+  // Filter logs for this user (support both username & user_id)
   const userLogs = useMemo(() => {
     return (attendanceLogs || [])
-      .filter((l) => (l.username || '').toLowerCase() === unameLower)
+      .filter((l) => {
+        const matchUname = (l.username || '').toLowerCase() === unameLower;
+        const matchId = targetUserId && l.user_id === targetUserId;
+        return matchUname || matchId;
+      })
       .sort((a, b) => (b.work_date || '').localeCompare(a.work_date || ''));
-  }, [attendanceLogs, unameLower]);
+  }, [attendanceLogs, unameLower, targetUserId]);
 
-  // Filter prospects for this user
+  // Filter prospects for this user (support both created_by_username & user_id)
   const userProspects = useMemo(() => {
-    return (prospects || []).filter(
-      (p) => (p.created_by_username || '').toLowerCase() === unameLower
-    );
-  }, [prospects, unameLower]);
+    return (prospects || []).filter((p) => {
+      const matchUname = (p.created_by_username || '').toLowerCase() === unameLower;
+      const matchId = targetUserId && p.user_id === targetUserId;
+      return matchUname || matchId;
+    });
+  }, [prospects, unameLower, targetUserId]);
 
   // Filter deals for this user
   const userDeals = useMemo(() => {
@@ -167,32 +174,52 @@ export default function UserDetailPage() {
     };
   }, [userDeals, targetUser]);
 
-  // Overall time & attendance stats
+  // Group logs by work_date for accurate day-level metrics & multi-session support
+  const dailyWorkMap = useMemo(() => {
+    const map = new Map();
+    userLogs.forEach((l) => {
+      const d = l.work_date;
+      if (!d) return;
+      const current = map.get(d) || { totalSec: 0, logs: [], isRunning: false };
+      const sec = calculateLiveSeconds(l, nowTick);
+      current.totalSec += sec;
+      current.logs.push(l);
+      if (l.status === 'running') current.isRunning = true;
+      map.set(d, current);
+    });
+    return map;
+  }, [userLogs, nowTick, calculateLiveSeconds]);
+
+  // Overall time & attendance stats (aggregated per unique work day)
   const timeStats = useMemo(() => {
     const totalSec = userLogs.reduce(
       (acc, l) => acc + calculateLiveSeconds(l, nowTick),
       0
     );
-    const todayLog = userLogs.find((l) => l.work_date === todayDate) || null;
-    const todaySec = calculateLiveSeconds(todayLog, nowTick);
-    const daysWorked = userLogs.length;
+    const todayData = dailyWorkMap.get(todayDate) || { totalSec: 0, isRunning: false };
+    const todaySec = todayData.totalSec;
+    const isTodayRunning = todayData.isRunning;
+    const daysWorked = dailyWorkMap.size;
     const avgSecPerDay = daysWorked > 0 ? Math.round(totalSec / daysWorked) : 0;
 
     const targetSec = (Number(targetUser?.targetDailyHours) || 3) * 3600;
-    const targetMetDays = userLogs.filter((l) => (l.accumulated_seconds || 0) >= targetSec).length;
+    let targetMetDays = 0;
+    dailyWorkMap.forEach((day) => {
+      if (day.totalSec >= targetSec) targetMetDays++;
+    });
 
     return {
       totalSec,
       todaySec,
-      todayLog,
+      isTodayRunning,
       daysWorked,
       avgSecPerDay,
       targetMetDays,
       targetMetPct: daysWorked > 0 ? Math.round((targetMetDays / daysWorked) * 100) : 0,
     };
-  }, [userLogs, nowTick, calculateLiveSeconds, todayDate, targetUser]);
+  }, [userLogs, dailyWorkMap, todayDate, targetUser]);
 
-  // Daily Chart Data for the last N days
+  // Daily Chart Data for the last N days (timezone-safe via getOffsetDateString)
   const chartData = useMemo(() => {
     const result = [];
     const targetHours = Number(targetUser?.targetDailyHours) || 3;
@@ -200,13 +227,14 @@ export default function UserDetailPage() {
     for (let i = chartPeriod - 1; i >= 0; i--) {
       const d = new Date();
       d.setDate(d.getDate() - i);
-      const dateStr = d.toISOString().split('T')[0];
-      const log = userLogs.find((l) => l.work_date === dateStr);
-      const sec = log ? calculateLiveSeconds(log, nowTick) : 0;
+      const dateStr = getOffsetDateString(-i);
+      const dayData = dailyWorkMap.get(dateStr);
+      const sec = dayData ? dayData.totalSec : 0;
       const hours = Number((sec / 3600).toFixed(1));
       const isTargetMet = hours >= targetHours;
       const dayName = d.toLocaleDateString('id-ID', { weekday: 'short' });
       const label = `${d.getDate()}/${d.getMonth() + 1}`;
+      const primaryTag = dayData?.logs?.[0]?.focus_tag || '-';
 
       result.push({
         dateStr,
@@ -215,14 +243,14 @@ export default function UserDetailPage() {
         hours,
         sec,
         isTargetMet,
-        status: log?.status || (sec > 0 ? 'completed' : 'empty'),
-        tag: log?.focus_tag || '-',
+        status: dayData?.isRunning ? 'running' : sec > 0 ? 'completed' : 'empty',
+        tag: primaryTag,
       });
     }
 
     const maxHours = Math.max(targetHours * 1.5, ...result.map((r) => r.hours), 4);
     return { list: result, maxHours, targetHours };
-  }, [userLogs, chartPeriod, targetUser, calculateLiveSeconds, nowTick]);
+  }, [dailyWorkMap, chartPeriod, targetUser]);
 
   // Prospects status breakdown
   const prospectBreakdown = useMemo(() => {
@@ -233,7 +261,7 @@ export default function UserDetailPage() {
     const negosiasi = userProspects.filter((p) => p.status === 'Negosiasi').length;
     const deal = userProspects.filter((p) => p.status === 'Deal').length;
     const batal = userProspects.filter((p) => p.status === 'Batal').length;
-    const closingRate = total > 0 ? Math.round((deal / total) * 100) : 0;
+    const closingRate = total > 0 ? Math.min(100, Math.round((deal / total) * 100)) : 0;
 
     return { total, baru, dihubungi, followUp, negosiasi, deal, batal, closingRate };
   }, [userProspects]);
@@ -336,7 +364,7 @@ export default function UserDetailPage() {
               className="notion-workspace-badge"
               style={{ width: '48px', height: '48px', fontSize: '18px', borderRadius: '12px' }}
             >
-              {targetUser.username.slice(0, 2).toUpperCase()}
+              {String(targetUser.username || 'US').slice(0, 2).toUpperCase()}
             </span>
             <div>
               <div className="d-flex align-items-center gap-2">
@@ -385,9 +413,21 @@ export default function UserDetailPage() {
           <div className="d-flex align-items-center gap-2">
             <div className="p-2 px-3 rounded bg-light border text-end">
               <div className="text-muted" style={{ fontSize: '11px' }}>Status Jam Kerja Hari Ini</div>
-              <div className="fw-bold" style={{ fontSize: '13.5px', color: timeStats.todaySec > 0 ? '#166534' : '#6b7280' }}>
-                {timeStats.todaySec > 0
-                  ? `● Aktif: ${formatDurationHuman(timeStats.todaySec)}`
+              <div
+                className="fw-bold"
+                style={{
+                  fontSize: '13.5px',
+                  color: timeStats.isTodayRunning
+                    ? '#166534'
+                    : timeStats.todaySec > 0
+                    ? '#1e40af'
+                    : '#6b7280',
+                }}
+              >
+                {timeStats.isTodayRunning
+                  ? `● Sedang Kerja: ${formatDurationHuman(timeStats.todaySec)}`
+                  : timeStats.todaySec > 0
+                  ? `✓ Selesai: ${formatDurationHuman(timeStats.todaySec)}`
                   : 'Belum Absen Hari Ini'}
               </div>
             </div>
@@ -888,7 +928,12 @@ export default function UserDetailPage() {
 
           {/* Mobile Card View */}
           <div className="mobile-card-list d-block d-md-none">
-            {filteredUserProspects.map((p) => {
+            {filteredUserProspects.length === 0 ? (
+              <div className="text-center py-4 text-muted bg-light rounded border" style={{ fontSize: '13px' }}>
+                Tidak ada data prospek yang cocok dengan pencarian/filter.
+              </div>
+            ) : (
+              filteredUserProspects.map((p) => {
               const cleanPhone = normalizeWhatsAppNumber(p.whatsapp_number);
               return (
                 <div key={p.id} className="mobile-data-card">
@@ -929,7 +974,7 @@ export default function UserDetailPage() {
                   </div>
                 </div>
               );
-            })}
+            }))}
           </div>
         </div>
       )}
@@ -1015,13 +1060,18 @@ export default function UserDetailPage() {
 
           {/* Mobile Deal Cards */}
           <div className="mobile-card-list d-block d-md-none">
-            {userDeals.map((d) => {
-              const curr = d.currency || 'IDR';
-              const val = Number(d.project_value) || 0;
-              const dp = d.payment_status === 'Lunas' ? val : Number(d.dp_amount) || 0;
-              const rate = d.commission?.hunter_rate !== undefined ? Number(d.commission.hunter_rate) : 0.15;
-              const hunterAmt = Math.round((d.payment_status === 'Lunas' ? val : dp) * rate);
-              const isPaid = Boolean(d.commission?.hunter_paid || d.commission?.status === 'paid');
+            {userDeals.length === 0 ? (
+              <div className="text-center py-4 text-muted bg-light rounded border" style={{ fontSize: '13px' }}>
+                Belum ada proyek deal closing yang tercatat dari personel ini.
+              </div>
+            ) : (
+              userDeals.map((d) => {
+                const curr = d.currency || 'IDR';
+                const val = Number(d.project_value) || 0;
+                const dp = d.payment_status === 'Lunas' ? val : Number(d.dp_amount) || 0;
+                const rate = d.commission?.hunter_rate !== undefined ? Number(d.commission.hunter_rate) : (targetUser?.customCommissionRate || 0.15);
+                const hunterAmt = Math.round((d.payment_status === 'Lunas' ? val : dp) * rate);
+                const isPaid = Boolean(d.commission?.hunter_paid || d.commission?.status === 'paid');
 
               return (
                 <div key={d.id} className="mobile-data-card">
@@ -1055,7 +1105,7 @@ export default function UserDetailPage() {
                   </div>
                 </div>
               );
-            })}
+            }))}
           </div>
         </div>
       )}
@@ -1135,7 +1185,12 @@ export default function UserDetailPage() {
 
           {/* Mobile Attendance Cards */}
           <div className="mobile-card-list d-block d-md-none">
-            {userLogs.map((log) => {
+            {userLogs.length === 0 ? (
+              <div className="text-center py-4 text-muted bg-light rounded border" style={{ fontSize: '13px' }}>
+                Belum ada riwayat absensi stopwatch dari personel ini.
+              </div>
+            ) : (
+              userLogs.map((log) => {
               const sec = calculateLiveSeconds(log, nowTick);
               return (
                 <div key={log.id} className="mobile-data-card">
@@ -1153,7 +1208,7 @@ export default function UserDetailPage() {
                   )}
                 </div>
               );
-            })}
+            }))}
           </div>
         </div>
       )}
