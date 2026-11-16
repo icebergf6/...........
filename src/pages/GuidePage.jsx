@@ -1033,10 +1033,10 @@ export default function GuidePage() {
       </div>
 
       {/* ===================================================================== */}
-      {/* 3. NAVIGASI 7 SUB-HALAMAN (FULL-WIDTH SEGMENTED BAR RAPI)             */}
+      {/* 3. NAVIGASI 7 SUB-HALAMAN (SCROLLABLE HORIZONTAL CHIP BAR RAPI)       */}
       {/* ===================================================================== */}
       <div
-        className="d-flex flex-wrap gap-2 p-2 rounded-3 mb-4 bg-light border"
+        className="scrollable-chips-bar p-2 rounded-3 mb-4 bg-light border"
         style={{ borderColor: 'var(--notion-border)' }}
       >
         {SUB_TABS.map((tab) => {
@@ -1050,7 +1050,7 @@ export default function GuidePage() {
                 setSearchQuery('');
                 setActiveSubPage(tab.id);
               }}
-              className="btn btn-sm d-inline-flex align-items-center gap-2 px-3 py-2 rounded-2 border-0"
+              className="btn btn-sm flex-shrink-0 d-inline-flex align-items-center gap-2 px-3 py-2 rounded-2 border-0"
               style={{
                 backgroundColor: isActive ? '#2f2f2f' : '#ffffff',
                 color: isActive ? '#ffffff' : 'var(--notion-text)',

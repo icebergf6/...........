@@ -899,8 +899,8 @@ Mohon konfirmasinya agar kami dapat mengirimkan Invoice Perpanjangan resmi dan m
             </div>
           </div>
 
-          {/* Table of Deal Clients & Financials */}
-          <div className="notion-table-wrapper mb-5">
+          {/* Desktop View: Table of Deal Clients & Financials (Screens >= 768px) */}
+          <div className="notion-table-wrapper mb-4 d-none d-md-block">
             <div className="table-responsive">
               <table className="notion-table">
                 <thead>
@@ -1114,6 +1114,197 @@ Mohon konfirmasinya agar kami dapat mengirimkan Invoice Perpanjangan resmi dan m
               </table>
             </div>
           </div>
+
+          {/* Mobile View: Hybrid Responsive Cards (Screens < 768px) */}
+          <div className="mobile-card-list d-block d-md-none mb-5">
+            {loading ? (
+              <div className="notion-card text-center py-4 text-muted">
+                Memuat data keuangan klien deal...
+              </div>
+            ) : filteredDeals.length === 0 ? (
+              <div className="notion-card text-center py-4">
+                <div className="text-muted mb-2">
+                  Belum ada klien deal yang cocok dengan filter.
+                </div>
+                <button
+                  type="button"
+                  className="btn-notion-outline"
+                  onClick={() => setIsAddDealOpen(true)}
+                >
+                  <Plus size={14} />
+                  <span>Tambah Klien Deal Baru</span>
+                </button>
+              </div>
+            ) : (
+              filteredDeals.map((client) => {
+                const curr = client.currency || 'IDR';
+                const isUsd = curr === 'USD';
+                const val = Number(client.project_value) || 0;
+                const dp = Number(client.dp_amount) || 0;
+                const remaining = Math.max(0, val - dp);
+                const isFullManaged =
+                  client.management_type !== 'project_only';
+
+                return (
+                  <div
+                    key={client.id}
+                    className="mobile-data-card"
+                    style={{
+                      borderLeft:
+                        client.payment_status === 'Lunas'
+                          ? '4px solid #16a34a'
+                          : client.payment_status === 'DP Masuk'
+                          ? '4px solid #d97706'
+                          : '4px solid #dc2626',
+                    }}
+                  >
+                    {/* Header */}
+                    <div className="mobile-data-card-header">
+                      <div className="flex-grow-1 overflow-hidden pe-2">
+                        <div
+                          className="mobile-data-card-title text-truncate"
+                          onClick={() => setSelectedClientId(client.id)}
+                          style={{ cursor: 'pointer' }}
+                        >
+                          {client.client_name}
+                        </div>
+                        <div className="d-flex flex-wrap align-items-center gap-1 mt-1">
+                          <span
+                            className={`badge rounded-pill ${
+                              isFullManaged
+                                ? 'bg-primary-subtle text-primary border border-primary-subtle'
+                                : 'bg-warning-subtle text-warning-emphasis border border-warning-subtle'
+                            }`}
+                            style={{ fontSize: '10px' }}
+                          >
+                            {isFullManaged
+                              ? '🏢 Full Managed'
+                              : '⚡ Project Saja'}
+                          </span>
+                          <span
+                            className={`notion-pill ${getPaymentBadgeClass(
+                              client.payment_status
+                            )}`}
+                          >
+                            {client.payment_status}
+                          </span>
+                          <span
+                            className="notion-pill"
+                            style={{
+                              backgroundColor: isUsd ? '#e0f2fe' : '#f1f1ef',
+                              color: isUsd ? '#0369a1' : '#37352f',
+                              fontSize: '10px',
+                            }}
+                          >
+                            {isUsd ? '$ USD' : 'Rp IDR'}
+                          </span>
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setSelectedClientId(client.id)}
+                        className="btn btn-sm btn-light border py-1 px-2 flex-shrink-0"
+                        style={{ fontSize: '11.5px' }}
+                      >
+                        Detail &rarr;
+                      </button>
+                    </div>
+
+                    {/* Financial Numbers Grid */}
+                    <div className="mobile-data-card-body">
+                      <div className="p-2 rounded bg-light border d-flex justify-content-between align-items-center">
+                        <div>
+                          <div className="text-muted" style={{ fontSize: '11px' }}>
+                            Nilai Kontrak
+                          </div>
+                          <div className="fw-bold" style={{ fontSize: '14px' }}>
+                            {formatCurrency(val, curr)}
+                          </div>
+                        </div>
+                        <div className="text-end">
+                          <div className="text-muted" style={{ fontSize: '11px' }}>
+                            DP Masuk
+                          </div>
+                          <div
+                            className="fw-bold text-success"
+                            style={{ fontSize: '14px' }}
+                          >
+                            {formatCurrency(dp, curr)}
+                          </div>
+                        </div>
+                        {remaining > 0 && (
+                          <div className="text-end">
+                            <div className="text-muted" style={{ fontSize: '11px' }}>
+                              Sisa Piutang
+                            </div>
+                            <div
+                              className="fw-bold text-warning"
+                              style={{ fontSize: '14px' }}
+                            >
+                              {formatCurrency(remaining, curr)}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+
+                      <div
+                        className="d-flex align-items-center justify-content-between text-secondary"
+                        style={{ fontSize: '12px' }}
+                      >
+                        <span>
+                          Sumber: <strong>{client.source_platform}</strong> ({client.social_handle || '-'})
+                        </span>
+                        <span className="text-muted">
+                          Hunter: @{client.created_by_username || 'tim'}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Footer Actions */}
+                    <div className="mobile-data-card-footer">
+                      <div className="d-flex align-items-center gap-1">
+                        <button
+                          type="button"
+                          className="btn btn-sm btn-light border py-1 px-2 d-inline-flex align-items-center gap-1"
+                          style={{ fontSize: '11.5px' }}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setInvoiceModalState({
+                              client,
+                              initialType: null,
+                            });
+                          }}
+                        >
+                          <FileText size={12} />
+                          <span>Invoice</span>
+                        </button>
+
+                        {client.payment_status !== 'Lunas' && (
+                          <button
+                            type="button"
+                            className="btn btn-sm btn-outline-success py-1 px-2"
+                            style={{ fontSize: '11.5px', fontWeight: 600 }}
+                            onClick={(e) => handleQuickMarkLunas(e, client)}
+                          >
+                            Tandai Lunas
+                          </button>
+                        )}
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => setSelectedClientId(client.id)}
+                        className="btn btn-sm btn-link p-0 text-decoration-none text-muted"
+                        style={{ fontSize: '12px' }}
+                      >
+                        Edit Proyek
+                      </button>
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </div>
         </>
       )}
 
@@ -1319,8 +1510,8 @@ Mohon konfirmasinya agar kami dapat mengirimkan Invoice Perpanjangan resmi dan m
             </div>
           </div>
 
-          {/* Table of Subscriptions & Domain/Hosting Renewals */}
-          <div className="notion-table-wrapper mb-5">
+          {/* Desktop View: Table of Subscriptions & Domain/Hosting Renewals (Screens >= 768px) */}
+          <div className="notion-table-wrapper mb-4 d-none d-md-block">
             <div className="table-responsive">
               <table className="notion-table">
                 <thead>
@@ -1559,6 +1750,147 @@ Mohon konfirmasinya agar kami dapat mengirimkan Invoice Perpanjangan resmi dan m
                 </tbody>
               </table>
             </div>
+          </div>
+
+          {/* Mobile View: Hybrid Responsive Cards for Renewals (Screens < 768px) */}
+          <div className="mobile-card-list d-block d-md-none mb-5">
+            {filteredRenewals.length === 0 ? (
+              <div className="notion-card text-center py-4 text-muted">
+                Tidak ada data langganan klien yang cocok dengan filter.
+              </div>
+            ) : (
+              filteredRenewals.map((client) => {
+                const curr = client.currency || 'IDR';
+                const isProjectOnly =
+                  client.management_type === 'project_only';
+                const rInfo = getRenewalStatus(
+                  client.renewal_due_date,
+                  client.renewal_enabled,
+                  client.management_type
+                );
+                const price = Number(client.renewal_price) || 0;
+                const cost = Number(client.renewal_cost) || 0;
+                const netMargin = Math.max(0, price - cost);
+
+                return (
+                  <div
+                    key={client.id}
+                    className="mobile-data-card"
+                    style={{
+                      borderLeft:
+                        rInfo.status === 'expired'
+                          ? '4px solid #dc2626'
+                          : rInfo.status === 'expiring_soon'
+                          ? '4px solid #d97706'
+                          : isProjectOnly
+                          ? '4px solid #94a3b8'
+                          : '4px solid #16a34a',
+                    }}
+                  >
+                    <div className="mobile-data-card-header">
+                      <div className="flex-grow-1 overflow-hidden pe-2">
+                        <div className="mobile-data-card-title text-truncate">
+                          {client.client_name}
+                        </div>
+                        <div className="d-flex flex-wrap align-items-center gap-1 mt-1">
+                          <span className={`badge rounded-pill ${rInfo.pillClass}`} style={{ fontSize: '10px' }}>
+                            {rInfo.label}
+                          </span>
+                          {!isProjectOnly && client.renewal_due_date && (
+                            <span className="text-muted" style={{ fontSize: '11px' }}>
+                              Due: {client.renewal_due_date}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={(e) => openEditRenewalModal(e, client)}
+                        className="btn btn-sm btn-light border py-1 px-2 flex-shrink-0"
+                        style={{ fontSize: '11.5px' }}
+                      >
+                        <Settings2 size={12} className="me-1" />
+                        <span>Atur</span>
+                      </button>
+                    </div>
+
+                    <div className="mobile-data-card-body">
+                      {!isProjectOnly && (
+                        <div className="p-2 rounded bg-light border d-flex justify-content-between align-items-center">
+                          <div>
+                            <div className="text-muted" style={{ fontSize: '11px' }}>
+                              Tagihan Klien
+                            </div>
+                            <div className="fw-bold" style={{ fontSize: '13.5px' }}>
+                              {formatCurrency(price, curr)} / {client.renewal_cycle || 'Yearly'}
+                            </div>
+                          </div>
+                          <div className="text-end">
+                            <div className="text-muted" style={{ fontSize: '11px' }}>
+                              Laba Bersih Studio
+                            </div>
+                            <div className="fw-bold text-success" style={{ fontSize: '13.5px' }}>
+                              +{formatCurrency(netMargin, curr)}
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      <div className="text-secondary" style={{ fontSize: '12px' }}>
+                        Domain: <strong>{client.delivery_assets?.domain || client.social_handle || '-'}</strong>
+                      </div>
+                    </div>
+
+                    {!isProjectOnly && (
+                      <div className="mobile-data-card-footer">
+                        <div className="d-flex align-items-center gap-1">
+                          <button
+                            type="button"
+                            className="btn btn-sm btn-success py-1 px-2 d-inline-flex align-items-center gap-1"
+                            style={{ fontSize: '11px' }}
+                            onClick={(e) => handleOneClickRenewCycle(e, client)}
+                          >
+                            <RefreshCw size={11} />
+                            <span>Perpanjang +1</span>
+                          </button>
+
+                          <button
+                            type="button"
+                            className="btn btn-sm btn-light border py-1 px-2 d-inline-flex align-items-center gap-1"
+                            style={{ fontSize: '11px' }}
+                            onClick={(e) => handleCopyRenewalReminderWA(e, client)}
+                          >
+                            {copiedReminderId === client.id ? (
+                              <span className="text-success fw-bold">Tersalin!</span>
+                            ) : (
+                              <>
+                                <Copy size={11} />
+                                <span>Copy WA</span>
+                              </>
+                            )}
+                          </button>
+
+                          <button
+                            type="button"
+                            className="btn btn-sm btn-light border py-1 px-2 d-inline-flex align-items-center gap-1"
+                            style={{ fontSize: '11px' }}
+                            onClick={() =>
+                              setInvoiceModalState({
+                                client,
+                                initialType: 'renewal',
+                              })
+                            }
+                          >
+                            <FileText size={11} />
+                            <span>Invoice</span>
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })
+            )}
           </div>
         </>
       )}

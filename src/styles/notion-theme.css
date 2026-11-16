@@ -72,13 +72,15 @@ body {
     top: 0;
     bottom: 0;
     transform: translateX(-100%);
-    box-shadow: 0 12px 32px rgba(15, 15, 15, 0.12);
+    box-shadow: 0 12px 32px rgba(15, 15, 15, 0.18);
+    backdrop-filter: blur(8px);
+    z-index: 1060;
   }
   .notion-sidebar.open {
     transform: translateX(0);
   }
   .notion-page-container {
-    padding: 24px 20px 48px;
+    padding: 16px 14px 92px !important;
   }
 }
 
@@ -341,7 +343,8 @@ body {
 .notion-drawer-backdrop {
   position: fixed;
   inset: 0;
-  background-color: rgba(15, 15, 15, 0.18);
+  background-color: rgba(15, 15, 15, 0.4);
+  backdrop-filter: blur(2px);
   z-index: 1045;
   animation: fadeIn 0.15s ease;
 }
@@ -356,7 +359,7 @@ body {
   max-width: 100vw;
   background-color: #ffffff;
   border-left: 1px solid var(--notion-border);
-  box-shadow: -8px 0 32px rgba(15, 15, 15, 0.08);
+  box-shadow: -8px 0 32px rgba(15, 15, 15, 0.12);
   z-index: 1050;
   display: flex;
   flex-direction: column;
@@ -374,12 +377,65 @@ body {
   }
 }
 
+@keyframes slideInUp {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
 @keyframes fadeIn {
   from {
     opacity: 0;
   }
   to {
     opacity: 1;
+  }
+}
+
+/* Mobile Bottom Sheet Drawer for Screens < 768px */
+@media (max-width: 767.98px) {
+  .notion-drawer,
+  .notion-side-drawer {
+    top: auto !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    width: 100% !important;
+    max-width: 100vw !important;
+    max-height: 90vh !important;
+    border-radius: 18px 18px 0 0 !important;
+    border-top: 1px solid var(--notion-border) !important;
+    border-left: none !important;
+    box-shadow: 0 -10px 40px rgba(15, 15, 15, 0.2) !important;
+    padding: 16px 16px 28px !important;
+    animation: slideInUp 0.22s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  }
+
+  .notion-drawer-drag-handle {
+    width: 42px;
+    height: 4px;
+    background-color: #d3d3cf;
+    border-radius: 999px;
+    margin: 0 auto 12px;
+  }
+
+  .notion-property-row {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    padding: 8px 0 !important;
+  }
+
+  .notion-property-label {
+    width: 100% !important;
+    margin-bottom: 4px !important;
+    font-size: 12px !important;
+  }
+
+  .notion-property-value {
+    width: 100% !important;
   }
 }
 
@@ -481,4 +537,200 @@ body {
   .notion-drawer-backdrop {
     display: none !important;
   }
+}
+
+/* ========================================================================== */
+/* Mobile UI/UX System: Bottom Navigation, Hybrid Cards, Touch Ergonomics      */
+/* ========================================================================== */
+
+/* Mobile Bottom Navigation Bar (Thumb Zone) */
+.notion-mobile-bottom-nav {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 62px;
+  background-color: rgba(255, 255, 255, 0.94);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border-top: 1px solid var(--notion-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  padding: 0 4px;
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  z-index: 1030;
+  box-shadow: 0 -2px 12px rgba(15, 15, 15, 0.05);
+}
+
+.notion-mobile-nav-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  color: var(--notion-text-muted);
+  text-decoration: none;
+  font-size: 10px;
+  font-weight: 500;
+  background: transparent;
+  border: none;
+  padding: 4px 2px;
+  cursor: pointer;
+  position: relative;
+  transition: color 0.15s ease, transform 0.1s ease;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.notion-mobile-nav-item:active {
+  transform: scale(0.92);
+}
+
+.notion-mobile-nav-item.active {
+  color: #111827;
+  font-weight: 700;
+}
+
+.notion-mobile-nav-item.active .mobile-nav-icon-wrapper {
+  background-color: #f1f1ef;
+  color: #111827;
+}
+
+.mobile-nav-icon-wrapper {
+  width: 32px;
+  height: 28px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  transition: background-color 0.15s ease;
+}
+
+.mobile-nav-badge {
+  position: absolute;
+  top: -2px;
+  right: -4px;
+  min-width: 15px;
+  height: 15px;
+  border-radius: 999px;
+  background-color: #ef4444;
+  color: #ffffff;
+  font-size: 9px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 3px;
+  line-height: 1;
+}
+
+.mobile-nav-pulse-dot {
+  position: absolute;
+  top: 1px;
+  right: 1px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background-color: #16a34a;
+  box-shadow: 0 0 0 2px #ffffff;
+}
+
+/* Hybrid Mobile Card View (HP) */
+.mobile-card-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.mobile-data-card {
+  background: #ffffff;
+  border: 1px solid var(--notion-border);
+  border-radius: 10px;
+  padding: 14px 16px;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.1s ease;
+  position: relative;
+  box-shadow: 0 1px 3px rgba(15, 15, 15, 0.02);
+}
+
+.mobile-data-card:active {
+  transform: scale(0.99);
+  background-color: #fbfbfa;
+}
+
+.mobile-data-card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.mobile-data-card-title {
+  font-size: 14.5px;
+  font-weight: 600;
+  color: var(--notion-text);
+  line-height: 1.3;
+}
+
+.mobile-data-card-body {
+  font-size: 12.5px;
+  color: var(--notion-text-muted);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.mobile-data-card-footer {
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid #f3f3f1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+/* Horizontal Scrollable Chips Bar (For Categories, Sub-Tabs, Filter Pills) */
+.scrollable-chips-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: 4px;
+  scrollbar-width: none;
+}
+
+.scrollable-chips-bar::-webkit-scrollbar {
+  display: none;
+}
+
+/* Responsive Touch Target Helper (Min 44px for thumbs) */
+.touch-target-min {
+  min-height: 44px;
+  min-width: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Mobile Sticky Action Bar for Drawers / Bottom Sheets */
+.mobile-sticky-footer-actions {
+  position: sticky;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background-color: #ffffff;
+  padding: 12px 0 4px;
+  border-top: 1px solid var(--notion-border);
+  margin-top: 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  z-index: 10;
 }

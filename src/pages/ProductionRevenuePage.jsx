@@ -591,8 +591,8 @@ export default function ProductionRevenuePage() {
         </div>
       </div>
 
-      {/* Tabel Proyek Deal, Penugasan & Bagi Hasil */}
-      <div className="notion-table-wrapper mb-4">
+      {/* Desktop View: Tabel Proyek Deal, Penugasan & Bagi Hasil (Screens >= 768px) */}
+      <div className="notion-table-wrapper mb-4 d-none d-md-block">
         <div className="table-responsive">
           <table className="notion-table">
             <thead>
@@ -847,6 +847,187 @@ export default function ProductionRevenuePage() {
             </tbody>
           </table>
         </div>
+      </div>
+
+      {/* Mobile View: Hybrid Responsive Cards for Production (Screens < 768px) */}
+      <div className="mobile-card-list d-block d-md-none mb-4">
+        {filteredProjects.length === 0 ? (
+          <div className="notion-card text-center py-4 text-muted">
+            Tidak ada proyek deal yang cocok dengan kriteria filter saat ini.
+          </div>
+        ) : (
+          filteredProjects.map((deal) => {
+            const comm = deal.commission || {};
+            const assets = deal.delivery_assets || {};
+            const checklist = assets.checklist || {};
+            const completedStages = DELIVERY_CHECKLIST_ITEMS.filter((i) => Boolean(checklist[i.id])).length;
+            const progressPct = Math.round((completedStages / DELIVERY_CHECKLIST_ITEMS.length) * 100);
+
+            const curCurrency = deal.currency || 'IDR';
+            const projectVal = Number(deal.project_value) || 0;
+            const dpAmt = Number(deal.dp_amount) || 0;
+            const cashIn = deal.payment_status === 'Lunas' ? projectVal : dpAmt;
+
+            const hRate = comm.hunter_rate !== undefined ? Number(comm.hunter_rate) : 0.15;
+            const dRate = comm.dev_rate !== undefined ? Number(comm.dev_rate) : 0.50;
+            const sRate = comm.studio_rate !== undefined ? Number(comm.studio_rate) : Math.max(0, 1 - hRate - dRate);
+
+            const hAmt = Math.round(cashIn * hRate);
+            const dAmt = Math.round(cashIn * dRate);
+            const sAmt = Math.round(cashIn * sRate);
+
+            const isHunterPaid = Boolean(comm.hunter_paid || comm.status === 'paid');
+            const isDevPaid = Boolean(comm.dev_paid);
+            const mode = comm.work_mode || (deal.project_assignee?.includes('&') ? 'collab' : (deal.project_assignee?.toLowerCase() === (profile?.username || 'admin').toLowerCase() ? 'solo' : 'delegated'));
+
+            return (
+              <div
+                key={deal.id}
+                className="mobile-data-card"
+                style={{
+                  borderLeft:
+                    mode === 'solo'
+                      ? '4px solid #16a34a'
+                      : mode === 'collab'
+                      ? '4px solid #2563eb'
+                      : '4px solid #d97706',
+                }}
+              >
+                {/* Header */}
+                <div className="mobile-data-card-header">
+                  <div className="flex-grow-1 overflow-hidden pe-2">
+                    <div className="mobile-data-card-title text-truncate">
+                      {deal.client_name}
+                    </div>
+                    <div className="d-flex flex-wrap align-items-center gap-1 mt-1">
+                      {mode === 'solo' && (
+                        <span className="notion-pill" style={{ backgroundColor: '#dcfce7', color: '#166534', fontSize: '10px' }}>
+                          👨‍💻 Kerjakan Sendiri
+                        </span>
+                      )}
+                      {mode === 'collab' && (
+                        <span className="notion-pill" style={{ backgroundColor: '#dbeafe', color: '#1e40af', fontSize: '10px' }}>
+                          🤝 Kolaborasi
+                        </span>
+                      )}
+                      {mode === 'delegated' && (
+                        <span className="notion-pill" style={{ backgroundColor: '#fef3c7', color: '#92400e', fontSize: '10px' }}>
+                          👥 Delegasi Penuh
+                        </span>
+                      )}
+                      <span className="notion-pill pill-other" style={{ fontSize: '10px' }}>
+                        {deal.project_assignee || 'Belum Ditugaskan'}
+                      </span>
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => handleOpenEditModal(deal)}
+                    className="btn btn-sm btn-light border py-1 px-2 flex-shrink-0"
+                    style={{ fontSize: '11.5px' }}
+                  >
+                    Atur &rarr;
+                  </button>
+                </div>
+
+                {/* Body */}
+                <div className="mobile-data-card-body">
+                  {/* Progress Bar 6-Tahap */}
+                  <div>
+                    <div className="d-flex justify-content-between align-items-center mb-1" style={{ fontSize: '11px' }}>
+                      <span className="text-muted">Progres Pengerjaan</span>
+                      <span className="fw-bold text-dark">{completedStages}/6 Tahap ({progressPct}%)</span>
+                    </div>
+                    <div className="progress" style={{ height: '6px' }}>
+                      <div
+                        className={`progress-bar ${progressPct === 100 ? 'bg-success' : 'bg-primary'}`}
+                        style={{ width: `${progressPct}%` }}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Financial & Split Breakdown */}
+                  <div className="p-2 rounded bg-light border d-flex justify-content-between align-items-center">
+                    <div>
+                      <div className="text-muted" style={{ fontSize: '11px' }}>
+                        Hunter ({Math.round(hRate * 100)}%)
+                      </div>
+                      <div className={`fw-bold ${isHunterPaid ? 'text-success' : 'text-dark'}`} style={{ fontSize: '13px' }}>
+                        {formatCurrency(hAmt, curCurrency)}
+                      </div>
+                    </div>
+
+                    <div className="text-center">
+                      <div className="text-muted" style={{ fontSize: '11px' }}>
+                        Dev ({Math.round(dRate * 100)}%)
+                      </div>
+                      <div className={`fw-bold ${isDevPaid ? 'text-primary' : 'text-dark'}`} style={{ fontSize: '13px' }}>
+                        {formatCurrency(dAmt, curCurrency)}
+                      </div>
+                    </div>
+
+                    <div className="text-end">
+                      <div className="text-muted" style={{ fontSize: '11px' }}>
+                        Studio ({Math.round(sRate * 100)}%)
+                      </div>
+                      <div className="fw-bold text-dark" style={{ fontSize: '13px' }}>
+                        {formatCurrency(sAmt, curCurrency)}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="d-flex align-items-center justify-content-between text-secondary" style={{ fontSize: '11.5px' }}>
+                    <span>
+                      Hunter: <strong>@{deal.created_by_username || 'tim'}</strong> ({deal.whatsapp_number || '-'})
+                    </span>
+                    <span className="text-muted">
+                      Kontrak: {formatCurrency(projectVal, curCurrency)}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Footer Payout Toggle Buttons */}
+                <div className="mobile-data-card-footer">
+                  <div className="d-flex align-items-center gap-1">
+                    <button
+                      type="button"
+                      onClick={() => handleToggleHunterPayout(deal)}
+                      className={`btn btn-sm py-1 px-2 d-inline-flex align-items-center gap-1 ${
+                        isHunterPaid ? 'btn-success text-white' : 'btn-outline-secondary'
+                      }`}
+                      style={{ fontSize: '11px' }}
+                    >
+                      {isHunterPaid ? <Check size={11} /> : <Coins size={11} />}
+                      <span>Hunter: {isHunterPaid ? 'Cair ✓' : 'Bayar'}</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => handleToggleDevPayout(deal)}
+                      className={`btn btn-sm py-1 px-2 d-inline-flex align-items-center gap-1 ${
+                        isDevPaid ? 'btn-primary text-white' : 'btn-outline-secondary'
+                      }`}
+                      style={{ fontSize: '11px' }}
+                    >
+                      {isDevPaid ? <Check size={11} /> : <Sliders size={11} />}
+                      <span>Dev: {isDevPaid ? 'Cair ✓' : 'Bayar'}</span>
+                    </button>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => handleOpenEditModal(deal)}
+                    className="btn btn-sm btn-link p-0 text-decoration-none text-muted"
+                    style={{ fontSize: '12px' }}
+                  >
+                    Setup Tim &rarr;
+                  </button>
+                </div>
+              </div>
+            );
+          })
+        )}
       </div>
 
       {/* ===================================================================== */}

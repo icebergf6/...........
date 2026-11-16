@@ -346,6 +346,7 @@ export default function ProspectDetailDrawer({
     <>
       <div className="notion-drawer-backdrop" onClick={onClose} />
       <div className="notion-drawer">
+        <div className="notion-drawer-drag-handle d-md-none" />
         <form onSubmit={handleSubmit} className="h-100 d-flex flex-column">
           {/* Top Bar with Creator & Close */}
           <div className="d-flex align-items-center justify-content-between pb-3 mb-3 border-bottom">
@@ -1284,9 +1285,9 @@ export default function ProspectDetailDrawer({
             />
           </div>
 
-          {/* Footer Actions */}
+          {/* Footer Actions (Sticky Bottom for Thumb Reach) */}
           <div
-            className="d-flex align-items-center justify-content-between pt-3 border-top mt-auto"
+            className="mobile-sticky-footer-actions justify-content-between pt-3 border-top mt-auto"
             style={{ borderColor: 'var(--notion-border)' }}
           >
             {canDelete ? (

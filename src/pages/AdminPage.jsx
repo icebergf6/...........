@@ -1303,14 +1303,14 @@ export default function AdminPage({ defaultTab }) {
         </div>
       </div>
 
-      {/* 7-Tab Navigation Bar */}
+      {/* 7-Tab Navigation Bar (Scrollable on Mobile) */}
       <div
-        className="d-flex flex-wrap gap-2 p-1 rounded-2 mb-4 bg-light border"
+        className="scrollable-chips-bar p-1 rounded-2 mb-4 bg-light border"
         style={{ borderColor: 'var(--notion-border)' }}
       >
         <button
           type="button"
-          className="btn btn-sm d-inline-flex align-items-center gap-2 px-3 py-2 rounded border-0"
+          className="btn btn-sm flex-shrink-0 d-inline-flex align-items-center gap-2 px-3 py-2 rounded border-0"
           style={{
             backgroundColor: activeTab === 'users' ? '#2f2f2f' : 'transparent',
             color: activeTab === 'users' ? '#ffffff' : 'var(--notion-text)',
@@ -1325,7 +1325,7 @@ export default function AdminPage({ defaultTab }) {
 
         <button
           type="button"
-          className="btn btn-sm d-inline-flex align-items-center gap-2 px-3 py-2 rounded border-0"
+          className="btn btn-sm flex-shrink-0 d-inline-flex align-items-center gap-2 px-3 py-2 rounded border-0"
           style={{
             backgroundColor: activeTab === 'projects' ? '#2f2f2f' : 'transparent',
             color: activeTab === 'projects' ? '#ffffff' : 'var(--notion-text)',
@@ -1340,7 +1340,7 @@ export default function AdminPage({ defaultTab }) {
 
         <button
           type="button"
-          className="btn btn-sm d-inline-flex align-items-center gap-2 px-3 py-2 rounded border-0"
+          className="btn btn-sm flex-shrink-0 d-inline-flex align-items-center gap-2 px-3 py-2 rounded border-0"
           style={{
             backgroundColor: activeTab === 'lifecycle' ? '#2f2f2f' : 'transparent',
             color: activeTab === 'lifecycle' ? '#ffffff' : 'var(--notion-text)',
@@ -1355,7 +1355,7 @@ export default function AdminPage({ defaultTab }) {
 
         <button
           type="button"
-          className="btn btn-sm d-inline-flex align-items-center gap-2 px-3 py-2 rounded border-0"
+          className="btn btn-sm flex-shrink-0 d-inline-flex align-items-center gap-2 px-3 py-2 rounded border-0"
           style={{
             backgroundColor: activeTab === 'audit' ? '#2f2f2f' : 'transparent',
             color: activeTab === 'audit' ? '#ffffff' : 'var(--notion-text)',
@@ -1370,7 +1370,7 @@ export default function AdminPage({ defaultTab }) {
 
         <button
           type="button"
-          className="btn btn-sm d-inline-flex align-items-center gap-2 px-3 py-2 rounded border-0"
+          className="btn btn-sm flex-shrink-0 d-inline-flex align-items-center gap-2 px-3 py-2 rounded border-0"
           style={{
             backgroundColor:
               activeTab === 'attendance' ? '#2f2f2f' : 'transparent',
@@ -1387,7 +1387,7 @@ export default function AdminPage({ defaultTab }) {
 
         <button
           type="button"
-          className="btn btn-sm d-inline-flex align-items-center gap-2 px-3 py-2 rounded border-0"
+          className="btn btn-sm flex-shrink-0 d-inline-flex align-items-center gap-2 px-3 py-2 rounded border-0"
           style={{
             backgroundColor:
               activeTab === 'commissions' ? '#2f2f2f' : 'transparent',
@@ -1404,7 +1404,7 @@ export default function AdminPage({ defaultTab }) {
 
         <button
           type="button"
-          className="btn btn-sm d-inline-flex align-items-center gap-2 px-3 py-2 rounded border-0"
+          className="btn btn-sm flex-shrink-0 d-inline-flex align-items-center gap-2 px-3 py-2 rounded border-0"
           style={{
             backgroundColor: activeTab === 'system' ? '#2f2f2f' : 'transparent',
             color: activeTab === 'system' ? '#ffffff' : 'var(--notion-text)',

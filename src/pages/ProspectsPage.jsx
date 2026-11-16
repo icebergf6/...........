@@ -15,6 +15,7 @@ import {
   MessageSquare,
   Lock,
   ShieldCheck,
+  Phone,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useProspects } from '../context/ProspectsContext';
@@ -26,6 +27,7 @@ import {
   exportToCSV,
   getFollowUpBadgeMeta,
   getFollowUpStatus,
+  normalizeWhatsAppNumber,
 } from '../lib/supabase';
 import AddProspectModal from '../components/Prospects/AddProspectModal';
 import ProspectDetailDrawer from '../components/Prospects/ProspectDetailDrawer';
@@ -398,8 +400,8 @@ export default function ProspectsPage() {
         </div>
       </div>
 
-      {/* Notion-Style Prospects Table */}
-      <div className="notion-table-wrapper">
+      {/* Desktop View: Notion-Style Table (Screens >= 768px) */}
+      <div className="notion-table-wrapper d-none d-md-block">
         <div className="table-responsive">
           <table className="notion-table">
             <thead>
@@ -593,6 +595,178 @@ export default function ProspectsPage() {
             </tbody>
           </table>
         </div>
+      </div>
+
+      {/* Mobile View: Hybrid Responsive Cards (Screens < 768px) */}
+      <div className="mobile-card-list d-block d-md-none">
+        {loading ? (
+          <div className="notion-card text-center py-4 text-muted">
+            Memuat data prospek...
+          </div>
+        ) : filteredProspects.length === 0 ? (
+          <div className="notion-card text-center py-4">
+            <div className="text-muted mb-2">
+              Belum ada prospek yang sesuai dengan pencarian/filter.
+            </div>
+            <button
+              type="button"
+              className="btn-notion-outline"
+              onClick={() => setIsAddModalOpen(true)}
+            >
+              <Plus size={14} />
+              <span>Tambah Prospek Baru</span>
+            </button>
+          </div>
+        ) : (
+          filteredProspects.map((item) => {
+            const isSelected = selectedProspectId === item.id;
+            const fuBadge = getFollowUpBadgeMeta(
+              item.next_follow_up_date,
+              item.status
+            );
+            const notesCount = Array.isArray(item.follow_up_notes)
+              ? item.follow_up_notes.length
+              : 0;
+            const cleanPhone = normalizeWhatsAppNumber(item.whatsapp_number);
+
+            return (
+              <div
+                key={item.id}
+                className="mobile-data-card"
+                style={{
+                  borderLeft: isSelected
+                    ? '4px solid var(--notion-accent)'
+                    : undefined,
+                  backgroundColor: isSelected ? '#f8fafc' : '#ffffff',
+                }}
+              >
+                {/* Header: Title & Badges */}
+                <div className="mobile-data-card-header">
+                  <div className="flex-grow-1 overflow-hidden pe-2">
+                    <div
+                      className="mobile-data-card-title text-truncate"
+                      onClick={() => setSelectedProspectId(item.id)}
+                      style={{ cursor: 'pointer' }}
+                    >
+                      {item.client_name}
+                    </div>
+                    <div className="d-flex flex-wrap align-items-center gap-1 mt-1">
+                      <span
+                        className={`notion-pill ${getPlatformBadgeClass(
+                          item.source_platform
+                        )}`}
+                      >
+                        {item.source_platform}
+                      </span>
+                      <span
+                        className={`notion-pill ${getStatusBadgeClass(
+                          item.status
+                        )}`}
+                      >
+                        {item.status}
+                      </span>
+                      {item.status === 'Deal' && (
+                        <span
+                          className={`badge rounded-pill ${
+                            item.management_type === 'project_only'
+                              ? 'bg-warning-subtle text-warning-emphasis border border-warning-subtle'
+                              : 'bg-primary-subtle text-primary border border-primary-subtle'
+                          }`}
+                          style={{ fontSize: '9.5px' }}
+                        >
+                          {item.management_type === 'project_only'
+                            ? '⚡ Project Saja'
+                            : '🏢 Full Managed'}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedProspectId(item.id)}
+                    className="btn btn-sm btn-light border py-1 px-2 flex-shrink-0"
+                    style={{ fontSize: '11.5px' }}
+                  >
+                    Detail &rarr;
+                  </button>
+                </div>
+
+                {/* Body Details */}
+                <div className="mobile-data-card-body">
+                  {fuBadge && (
+                    <div className="d-flex align-items-center gap-2">
+                      <span
+                        className={`badge rounded-pill ${fuBadge.pillClass} px-2 py-1`}
+                        style={{ fontSize: '10.5px' }}
+                      >
+                        ● {fuBadge.label}
+                      </span>
+                      <span className="text-muted" style={{ fontSize: '11px' }}>
+                        {item.next_follow_up_date}
+                      </span>
+                    </div>
+                  )}
+
+                  <div
+                    className="d-flex align-items-center justify-content-between gap-2 text-secondary"
+                    style={{ fontSize: '12px' }}
+                  >
+                    <span className="text-truncate">
+                      Akun: <strong>{item.social_handle || '-'}</strong>
+                    </span>
+                    <span className="text-muted">
+                      Oleh: @{item.created_by_username || 'tim'}
+                    </span>
+                  </div>
+
+                  {item.notes && (
+                    <div
+                      className="p-2 rounded bg-light border text-truncate text-secondary"
+                      style={{ fontSize: '11.5px' }}
+                    >
+                      {item.notes}
+                    </div>
+                  )}
+                </div>
+
+                {/* Footer Quick Action (Direct WhatsApp Button) */}
+                <div className="mobile-data-card-footer">
+                  <div className="d-flex align-items-center gap-2">
+                    {cleanPhone ? (
+                      <a
+                        href={`https://wa.me/${cleanPhone}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="btn btn-sm btn-success py-1 px-2 d-inline-flex align-items-center gap-1 text-decoration-none shadow-sm"
+                        style={{ fontSize: '11.5px', fontWeight: 600 }}
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <Phone size={12} />
+                        <span>Chat WA ({cleanPhone})</span>
+                      </a>
+                    ) : (
+                      <span className="text-muted" style={{ fontSize: '11px' }}>
+                        Tidak ada no. WA
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="d-flex align-items-center gap-1">
+                    {notesCount > 0 && (
+                      <span
+                        className="badge bg-secondary-subtle text-secondary py-1 px-2"
+                        style={{ fontSize: '10.5px' }}
+                      >
+                        <MessageSquare size={10} className="me-1" />
+                        {notesCount} touchpoint
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+            );
+          })
+        )}
       </div>
 
       {/* Modal Tambah Prospek */}

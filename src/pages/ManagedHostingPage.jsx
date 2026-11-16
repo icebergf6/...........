@@ -543,7 +543,9 @@ export default function ManagedHostingPage() {
             </div>
           </div>
         ) : (
-          <div className="table-responsive">
+          <>
+            {/* Desktop View Table (Screens >= 768px) */}
+            <div className="table-responsive d-none d-md-block">
             <table className="table notion-table align-middle mb-0">
               <thead>
                 <tr>
@@ -742,7 +744,143 @@ export default function ManagedHostingPage() {
               </tbody>
             </table>
           </div>
-        )}
+
+          {/* Mobile View: Hybrid Responsive Cards for Managed Hosting (Screens < 768px) */}
+          <div className="mobile-card-list d-block d-md-none p-3">
+            {filteredClients.map((client) => {
+              const rInfo = getRenewalStatus(client.renewal_due_date, client.renewal_enabled ?? true, 'full_managed');
+              const domain = client.delivery_assets?.domain || client.social_handle || '-';
+              const price = Number(client.renewal_price) || 0;
+              const cost = Number(client.renewal_cost) || 0;
+              const netProfit = Math.max(0, price - cost);
+              const cycle = client.renewal_cycle || 'Yearly';
+
+              return (
+                <div
+                  key={client.id}
+                  className="mobile-data-card"
+                  style={{
+                    borderLeft:
+                      rInfo.status === 'expired'
+                        ? '4px solid #dc2626'
+                        : rInfo.status === 'expiring_soon'
+                        ? '4px solid #d97706'
+                        : '4px solid #16a34a',
+                  }}
+                >
+                  <div className="mobile-data-card-header">
+                    <div className="flex-grow-1 overflow-hidden pe-2">
+                      <div className="mobile-data-card-title text-truncate">
+                        {client.client_name}
+                      </div>
+                      <div className="d-flex flex-wrap align-items-center gap-1 mt-1">
+                        <span className={`badge rounded-pill ${rInfo.pillClass}`} style={{ fontSize: '10px' }}>
+                          ● {rInfo.label}
+                        </span>
+                        <span className="notion-pill" style={{ fontSize: '10px' }}>
+                          🌐 {domain}
+                        </span>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleOpenEditModal(client)}
+                      className="btn btn-sm btn-light border py-1 px-2 flex-shrink-0"
+                      style={{ fontSize: '11.5px' }}
+                    >
+                      <Edit size={12} className="me-1" />
+                      <span>Edit</span>
+                    </button>
+                  </div>
+
+                  <div className="mobile-data-card-body">
+                    <div className="p-2 rounded bg-light border d-flex justify-content-between align-items-center">
+                      <div>
+                        <div className="text-muted" style={{ fontSize: '11px' }}>
+                          Jatuh Tempo ({cycle})
+                        </div>
+                        <div className="fw-bold" style={{ fontSize: '13px' }}>
+                          {client.renewal_due_date || 'Belum Diatur'}
+                        </div>
+                      </div>
+                      <div className="text-end">
+                        <div className="text-muted" style={{ fontSize: '11px' }}>
+                          Tagihan (Net Profit)
+                        </div>
+                        <div className="fw-bold text-success" style={{ fontSize: '13px' }}>
+                          {formatCurrency(price, 'IDR')}{' '}
+                          <span style={{ fontSize: '11px', color: '#15803d' }}>
+                            (+{formatCurrency(netProfit, 'IDR')})
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="d-flex align-items-center justify-content-between text-secondary" style={{ fontSize: '11.5px' }}>
+                      <span>
+                        Layanan: <strong>{client.renewal_service_name || 'Hosting & Domain'}</strong>
+                      </span>
+                      <span className="text-muted">
+                        Hunter: @{client.created_by_username || 'tim'}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="mobile-data-card-footer">
+                    <div className="d-flex align-items-center gap-1">
+                      <button
+                        type="button"
+                        className="btn btn-sm btn-outline-success py-1 px-2 d-inline-flex align-items-center gap-1"
+                        style={{ fontSize: '11px' }}
+                        disabled={renewingId === client.id}
+                        onClick={() => handleRenewOnePeriod(client)}
+                      >
+                        <RefreshCw size={11} className={renewingId === client.id ? 'spin-anim' : ''} />
+                        <span>
+                          {renewingId === client.id
+                            ? '...'
+                            : `+1 ${cycle === 'Monthly' ? 'Bln' : 'Thn'}`}
+                        </span>
+                      </button>
+
+                      <button
+                        type="button"
+                        className="btn btn-sm btn-outline-primary py-1 px-2 d-inline-flex align-items-center gap-1"
+                        style={{ fontSize: '11px' }}
+                        onClick={() => handleSendWAReminder(client)}
+                      >
+                        <MessageSquare size={11} />
+                        <span>WA</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        className="btn btn-sm btn-outline-secondary py-1 px-2 d-inline-flex align-items-center gap-1"
+                        style={{ fontSize: '11px' }}
+                        onClick={() => setInvoiceClient(client)}
+                      >
+                        <FileText size={11} />
+                        <span>Invoice</span>
+                      </button>
+                    </div>
+
+                    {client.renewal_history && client.renewal_history.length > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => setHistoryModalClient(client)}
+                        className="btn btn-sm btn-link p-0 text-decoration-none text-muted"
+                        style={{ fontSize: '11px' }}
+                      >
+                        {client.renewal_history.length}x Perpanjang
+                      </button>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </>
+      )}
       </div>
 
       {/* Edit Layanan Domain & Hosting Modal */}

@@ -564,9 +564,9 @@ export default function AttendancePage() {
                 </div>
               </div>
 
-              {/* Mode Switcher Tabs */}
+              {/* Mode Switcher Tabs (Scrollable on Mobile) */}
               <div
-                className="d-flex flex-wrap p-1 rounded-2 mb-3"
+                className="scrollable-chips-bar p-1 rounded-2 mb-3"
                 style={{
                   backgroundColor: '#f1f1ef',
                   border: '1px solid var(--notion-border)',
@@ -576,7 +576,7 @@ export default function AttendancePage() {
                 <button
                   type="button"
                   onClick={() => setTimerMode('stopwatch')}
-                  className={`btn btn-sm flex-fill py-1 px-2 border-0 fw-semibold d-inline-flex align-items-center justify-content-center gap-1 ${
+                  className={`btn btn-sm flex-shrink-0 py-1 px-3 border-0 fw-semibold d-inline-flex align-items-center justify-content-center gap-1 ${
                     timerMode === 'stopwatch'
                       ? 'bg-white shadow-sm text-dark'
                       : 'text-muted bg-transparent'
@@ -590,7 +590,7 @@ export default function AttendancePage() {
                 <button
                   type="button"
                   onClick={() => setTimerMode('pomodoro')}
-                  className={`btn btn-sm flex-fill py-1 px-2 border-0 fw-semibold d-inline-flex align-items-center justify-content-center gap-1 ${
+                  className={`btn btn-sm flex-shrink-0 py-1 px-3 border-0 fw-semibold d-inline-flex align-items-center justify-content-center gap-1 ${
                     timerMode === 'pomodoro'
                       ? 'bg-white shadow-sm text-danger'
                       : 'text-muted bg-transparent'
@@ -604,7 +604,7 @@ export default function AttendancePage() {
                 <button
                   type="button"
                   onClick={() => setTimerMode('countdown')}
-                  className={`btn btn-sm flex-fill py-1 px-2 border-0 fw-semibold d-inline-flex align-items-center justify-content-center gap-1 ${
+                  className={`btn btn-sm flex-shrink-0 py-1 px-3 border-0 fw-semibold d-inline-flex align-items-center justify-content-center gap-1 ${
                     timerMode === 'countdown'
                       ? 'bg-white shadow-sm text-primary'
                       : 'text-muted bg-transparent'
@@ -618,7 +618,7 @@ export default function AttendancePage() {
                 <button
                   type="button"
                   onClick={() => setTimerMode('target')}
-                  className={`btn btn-sm flex-fill py-1 px-2 border-0 fw-semibold d-inline-flex align-items-center justify-content-center gap-1 ${
+                  className={`btn btn-sm flex-shrink-0 py-1 px-3 border-0 fw-semibold d-inline-flex align-items-center justify-content-center gap-1 ${
                     timerMode === 'target'
                       ? 'bg-white shadow-sm text-success'
                       : 'text-muted bg-transparent'
@@ -667,7 +667,7 @@ export default function AttendancePage() {
                   <div
                     className="fw-bold"
                     style={{
-                      fontSize: '56px',
+                      fontSize: 'clamp(34px, 11vw, 56px)',
                       fontVariantNumeric: 'tabular-nums',
                       letterSpacing: '-0.03em',
                       color:
@@ -754,7 +754,7 @@ export default function AttendancePage() {
                   <div
                     className="fw-bold"
                     style={{
-                      fontSize: '56px',
+                      fontSize: 'clamp(34px, 11vw, 56px)',
                       fontVariantNumeric: 'tabular-nums',
                       letterSpacing: '-0.03em',
                       color:
@@ -836,7 +836,7 @@ export default function AttendancePage() {
                   <div
                     className="fw-bold"
                     style={{
-                      fontSize: '56px',
+                      fontSize: 'clamp(34px, 11vw, 56px)',
                       fontVariantNumeric: 'tabular-nums',
                       letterSpacing: '-0.03em',
                       color:
@@ -899,7 +899,7 @@ export default function AttendancePage() {
                   <div
                     className="fw-bold"
                     style={{
-                      fontSize: '56px',
+                      fontSize: 'clamp(34px, 11vw, 56px)',
                       fontVariantNumeric: 'tabular-nums',
                       letterSpacing: '-0.03em',
                       color: isOverworking

@@ -671,19 +671,32 @@ export default function DashboardLayout() {
           </div>
 
           <div className="d-flex align-items-center gap-2">
-            {/* Compact Navbar Stopwatch Pill */}
+            {/* Compact Navbar Stopwatch Pill (Always visible across all devices) */}
             <NavLink
               to="/attendance"
-              className="d-none d-sm-inline-flex align-items-center gap-1 px-2 py-1 rounded text-decoration-none border"
+              className="d-inline-flex align-items-center gap-1 px-2 py-1 rounded text-decoration-none border"
               style={{
-                backgroundColor: isWorking ? '#f0fdf4' : '#fafaf9',
-                borderColor: isWorking ? '#bbf7d0' : 'var(--notion-border)',
-                color: isWorking ? '#166534' : 'var(--notion-text)',
-                fontSize: '12px',
+                backgroundColor: isWorking
+                  ? '#f0fdf4'
+                  : isPaused
+                  ? '#fffbeb'
+                  : '#fafaf9',
+                borderColor: isWorking
+                  ? '#bbf7d0'
+                  : isPaused
+                  ? '#fde68a'
+                  : 'var(--notion-border)',
+                color: isWorking
+                  ? '#166534'
+                  : isPaused
+                  ? '#92400e'
+                  : 'var(--notion-text)',
+                fontSize: '11.5px',
                 fontVariantNumeric: 'tabular-nums',
               }}
+              title={isWorking ? 'Stopwatch berjalan aktif' : isPaused ? 'Stopwatch dijeda' : 'Buka Absen & Stopwatch'}
             >
-              <Clock size={12} />
+              <Clock size={12} className={isWorking ? 'text-success' : ''} />
               <span className="fw-semibold">
                 {formatDurationHMS(myTodayElapsedSeconds)}
               </span>
@@ -904,13 +917,13 @@ export default function DashboardLayout() {
         </div>
       </div>
 
-      {/* Upgraded Live Floating Toast Notification Stack */}
+      {/* Upgraded Live Floating Toast Notification Stack (Positioned Above Mobile Bottom Nav on Mobile) */}
       {activePopups.length > 0 && (
         <div
           className="position-fixed d-flex flex-column gap-2 d-print-none"
           style={{
-            bottom: '20px',
-            right: '20px',
+            bottom: 'calc(74px + env(safe-area-inset-bottom, 0px))',
+            right: '16px',
             width: 'min(360px, calc(100vw - 32px))',
             zIndex: 1090,
           }}
@@ -1001,6 +1014,89 @@ export default function DashboardLayout() {
           })}
         </div>
       )}
+
+      {/* Mobile Bottom Navigation Bar (Thumb Zone) - Only visible on screens < lg */}
+      <nav className="notion-mobile-bottom-nav d-lg-none d-print-none">
+        <NavLink
+          to="/attendance"
+          onClick={() => setSidebarOpen(false)}
+          className={({ isActive }) =>
+            `notion-mobile-nav-item ${isActive ? 'active' : ''}`
+          }
+        >
+          <div className="mobile-nav-icon-wrapper">
+            <Clock size={18} />
+            {isWorking && <span className="mobile-nav-pulse-dot" />}
+          </div>
+          <span>Absen</span>
+        </NavLink>
+
+        <NavLink
+          to="/prospects"
+          onClick={() => setSidebarOpen(false)}
+          className={({ isActive }) =>
+            `notion-mobile-nav-item ${isActive ? 'active' : ''}`
+          }
+        >
+          <div className="mobile-nav-icon-wrapper">
+            <Users size={18} />
+            {prospects.length > 0 && (
+              <span className="mobile-nav-badge" style={{ backgroundColor: '#475569' }}>
+                {prospects.length > 99 ? '99+' : prospects.length}
+              </span>
+            )}
+          </div>
+          <span>Prospek</span>
+        </NavLink>
+
+        <NavLink
+          to="/deals"
+          onClick={() => setSidebarOpen(false)}
+          className={({ isActive }) =>
+            `notion-mobile-nav-item ${isActive ? 'active' : ''}`
+          }
+        >
+          <div className="mobile-nav-icon-wrapper">
+            <Wallet size={18} />
+            {dealClients.length > 0 && (
+              <span className="mobile-nav-badge" style={{ backgroundColor: '#16a34a' }}>
+                {dealClients.length}
+              </span>
+            )}
+          </div>
+          <span>Deals</span>
+        </NavLink>
+
+        <NavLink
+          to="/notifications"
+          onClick={() => setSidebarOpen(false)}
+          className={({ isActive }) =>
+            `notion-mobile-nav-item ${isActive ? 'active' : ''}`
+          }
+        >
+          <div className="mobile-nav-icon-wrapper">
+            <Bell size={18} />
+            {unreadCount > 0 && (
+              <span className="mobile-nav-badge bg-danger">
+                {unreadCount > 9 ? '9+' : unreadCount}
+              </span>
+            )}
+          </div>
+          <span>Notifikasi</span>
+        </NavLink>
+
+        <button
+          type="button"
+          onClick={() => setSidebarOpen((prev) => !prev)}
+          className={`notion-mobile-nav-item ${sidebarOpen ? 'active' : ''}`}
+          aria-label="Buka Menu Navigasi"
+        >
+          <div className="mobile-nav-icon-wrapper">
+            <Menu size={18} />
+          </div>
+          <span>Menu</span>
+        </button>
+      </nav>
     </div>
   );
 }
